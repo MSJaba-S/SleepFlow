@@ -32,9 +32,13 @@ final class FFTTests: XCTestCase {
 
     func testAcceleratedMatchesPortableWhenAvailable() {
         let n = 2048
-        let input = (0..<n).map { index -> Float in
+        var input = [Float](repeating: 0, count: n)
+        for index in 0..<n {
             let t = Double(index) / 48_000
-            return Float(0.3 * sin(2 * .pi * 440 * t) + 0.1 * sin(2 * .pi * 3_100 * t) + 0.05 * cos(2 * .pi * 90 * t))
+            let a: Double = 0.3 * sin(2 * Double.pi * 440 * t)
+            let b: Double = 0.1 * sin(2 * Double.pi * 3_100 * t)
+            let c: Double = 0.05 * cos(2 * Double.pi * 90 * t)
+            input[index] = Float(a + b + c)
         }
         let portable = RealFFT(size: n, useAccelerate: false).magnitudes(input)
         let accelerated = RealFFT(size: n, useAccelerate: true)

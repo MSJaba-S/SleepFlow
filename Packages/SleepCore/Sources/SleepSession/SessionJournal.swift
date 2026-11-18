@@ -52,7 +52,7 @@ public final class SessionJournal {
         protect?(headerURL)
         for name in [SessionJournal.epochsFile, SessionJournal.soundsFile, SessionJournal.movementsFile, SessionJournal.markersFile] {
             let url = directory.appendingPathComponent(name)
-            fileManager.createFile(atPath: url.path, contents: nil)
+            _ = fileManager.createFile(atPath: url.path, contents: nil)
             protect?(url)
         }
         self.header = header
@@ -108,7 +108,7 @@ public final class SessionJournal {
         if let existing = handles[name] { return existing }
         let url = directory.appendingPathComponent(name)
         if !FileManager.default.fileExists(atPath: url.path) {
-            FileManager.default.createFile(atPath: url.path, contents: nil)
+            _ = FileManager.default.createFile(atPath: url.path, contents: nil)
             protect?(url)
         }
         let newHandle = try FileHandle(forWritingTo: url)
