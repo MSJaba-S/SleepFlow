@@ -1,0 +1,23 @@
+# Xcode / XcodeGen output (the project is generated from project.yml in CI)
+*.xcodeproj/
+*.xcworkspace/
+build/
+DerivedData/
+Payload/
+*.ipa
+*.xcarchive/
+*.xcresult/
+build.log
+build-errors.txt
+test-summary.txt
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/SleepCore/.build/
+# Signing material must never be committed
+*.p12
+*.mobileprovision
+*.cer
+*.p8
+# macOS
+.DS_Store
