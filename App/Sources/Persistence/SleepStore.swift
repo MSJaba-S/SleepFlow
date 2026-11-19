@@ -122,6 +122,23 @@ final class SleepStore {
         }
     }
 
+    /// Applies a new score weighting to every stored night. Oldest first, so the comparison with the
+    /// previous night uses the new scores as well.
+    func rescoreAll(weights: ScoreWeights, demo: Bool) {
+        var previous: Int?
+        for record in sessions(demo: demo).reversed() {
+            guard let session = record.decoded() else { continue }
+            let rescored = session.rescored(with: weights, previousScore: previous)
+            if let payload = try? JSONEncoder().encode(rescored) {
+                record.payload = payload
+                record.score = rescored.score.value
+                record.qualityRaw = rescored.score.quality.rawValue
+            }
+            previous = rescored.score.value
+        }
+        try? context(demo: demo).save()
+    }
+
     func removeAllClipReferences(demo: Bool) {
         for record in sessions(demo: demo) {
             guard var session = record.decoded(), session.soundEvents.contains(where: { $0.clipFileName != nil }) else { continue }

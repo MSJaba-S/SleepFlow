@@ -17,6 +17,8 @@ public struct SessionHeader: Codable, Sendable, Hashable {
     public var algorithmVersion: String
     public var appVersion: String
     public var timeZoneIdentifier: String
+    /// Set when the user chose "wake after sleep" (power nap or sleep cycles) for this session.
+    public var napPlan: NapPlan?
 
     public init(
         id: UUID = UUID(),
@@ -28,7 +30,8 @@ public struct SessionHeader: Codable, Sendable, Hashable {
         isSimulated: Bool,
         algorithmVersion: String = SleepConstants.algorithmVersion,
         appVersion: String,
-        timeZoneIdentifier: String
+        timeZoneIdentifier: String,
+        napPlan: NapPlan? = nil
     ) {
         self.id = id
         self.start = start
@@ -40,6 +43,7 @@ public struct SessionHeader: Codable, Sendable, Hashable {
         self.algorithmVersion = algorithmVersion
         self.appVersion = appVersion
         self.timeZoneIdentifier = timeZoneIdentifier
+        self.napPlan = napPlan
     }
 }
 
@@ -58,6 +62,9 @@ public enum MarkerKind: String, Codable, Sendable, CaseIterable {
     case recovered
     case microphoneUnavailable
     case ended
+    /// Nap: counting started at this time (detail "sleep" when sleep onset was detected,
+    /// "latest" when no sleep was detected in time).
+    case napCountingStarted
 }
 
 /// Something that happened to the tracking process itself (not to the sleeper).
@@ -93,13 +100,25 @@ public struct WakeUpRecord: Codable, Sendable, Hashable {
     public var alarmTime: Date?
     public var reason: WakeReason?
     public var snoozeCount: Int
+    /// Nap: when counting started (sleep onset, or the latest count start).
+    public var countedFrom: Date?
+    /// Nap: true when counting started from detected sleep.
+    public var sleepDetected: Bool?
 
-    public init(deadline: Date?, windowStart: Date?, alarmTime: Date?, reason: WakeReason?, snoozeCount: Int) {
+    public init(deadline: Date?, windowStart: Date?, alarmTime: Date?, reason: WakeReason?, snoozeCount: Int, countedFrom: Date? = nil, sleepDetected: Bool? = nil) {
         self.deadline = deadline
         self.windowStart = windowStart
         self.alarmTime = alarmTime
         self.reason = reason
         self.snoozeCount = snoozeCount
+        self.countedFrom = countedFrom
+        self.sleepDetected = sleepDetected
+    }
+
+    /// Nap: sleep between the start of counting and the alarm.
+    public var napSleep: TimeInterval? {
+        guard let countedFrom, let alarmTime else { return nil }
+        return max(0, alarmTime.timeIntervalSince(countedFrom))
     }
 
     /// Minutes the Smart Alarm woke the user before the deadline.

@@ -149,6 +149,36 @@ final class SleepScoreTests: XCTestCase {
         XCTAssertEqual(a, b)
     }
 
+    func testReweightingWithSameWeightsKeepsTheScore() {
+        let night = metrics(totalSleep: 6.5 * 3600, timeInBed: 7.5 * 3600, latency: 35 * 60, interruptions: 3, restlessness: 0.25)
+        let targets = ScoreTargets(sleepGoal: 8 * 3600)
+        let original = SleepScoreCalculator().score(metrics: night, targets: targets, history: [])
+        XCTAssertEqual(original.reweighted(.standard), original)
+    }
+
+    func testReweightingMatchesAFreshCalculation() {
+        let night = metrics(totalSleep: 6 * 3600, timeInBed: 7 * 3600, latency: 40 * 60, interruptions: 4, restlessness: 0.3)
+        let targets = ScoreTargets(sleepGoal: 8 * 3600)
+        let custom = ScoreWeights(duration: 0.5, efficiency: 0.1, latency: 0.2, interruptions: 0.1, restlessness: 0.1, consistency: 0.4)
+        let fresh = SleepScoreCalculator(weights: custom).score(metrics: night, targets: targets, history: [])
+        let reweighted = SleepScoreCalculator().score(metrics: night, targets: targets, history: []).reweighted(custom)
+        XCTAssertEqual(reweighted.value, fresh.value)
+        XCTAssertEqual(reweighted.quality, fresh.quality)
+        for component in fresh.components {
+            XCTAssertEqual(reweighted.component(component.factor)?.weight ?? -1, component.weight, accuracy: 1e-9)
+        }
+    }
+
+    func testWeightHelpers() {
+        let weights = ScoreWeights.standard.setting(.latency, to: 2)
+        XCTAssertEqual(weights.latency, 1, "Weights are clamped to 0...1")
+        let none = ScoreWeights(duration: 0, efficiency: 0, latency: 0, interruptions: 0, restlessness: 0, consistency: 0)
+        XCTAssertTrue(none.isEmpty)
+        XCTAssertFalse(ScoreWeights.standard.isEmpty)
+        let shares = ScoreFactor.allCases.map { ScoreWeights.standard.share(of: $0) }
+        XCTAssertEqual(shares.reduce(0, +), 1, accuracy: 1e-9)
+    }
+
     func testQualityBands() {
         XCTAssertEqual(ScoreQuality(score: 90), .excellent)
         XCTAssertEqual(ScoreQuality(score: 75), .good)

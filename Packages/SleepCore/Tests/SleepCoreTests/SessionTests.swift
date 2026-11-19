@@ -1,5 +1,6 @@
 import XCTest
 @testable import SleepSession
+@testable import SleepScoring
 @testable import SleepModels
 @testable import AudioAnalysis
 @testable import MotionAnalysis
@@ -201,6 +202,27 @@ final class SessionAssemblerTests: XCTestCase {
         // Codable round trip (the app stores sessions as JSON with the default, lossless date strategy).
         let decoded = try JSONDecoder().decode(CompletedSession.self, from: JSONEncoder().encode(session))
         XCTAssertEqual(decoded, session)
+    }
+
+    func testRescoringAStoredNight() {
+        let night = NightSimulator.simulate(NightScenario(method: .microphone, bedtime: start, timeInBed: 6 * 3600, sleepLatency: 40 * 60), seed: 5)
+        let header = SessionHeader(start: start, method: .microphone, alarm: nil, smartAlarmEnabled: false, sleepGoal: 8 * 3600, isSimulated: true, appVersion: "test", timeZoneIdentifier: "UTC")
+        let input = SessionAssemblyInput(header: header, end: night.end, epochs: night.epochs, soundEvents: night.soundEvents, movementEvents: night.movementEvents, markers: [])
+        let session = SessionAssembler.assemble(input)
+
+        // Same weights: nothing changes.
+        XCTAssertEqual(session.rescored(with: .standard, previousScore: nil), session)
+
+        // Duration-only weighting equals a fresh assembly with those weights.
+        let durationOnly = ScoreWeights(duration: 1, efficiency: 0, latency: 0, interruptions: 0, restlessness: 0, consistency: 0)
+        var weightedInput = input
+        weightedInput.weights = durationOnly
+        let fresh = SessionAssembler.assemble(weightedInput)
+        let rescored = session.rescored(with: durationOnly, previousScore: 50)
+        XCTAssertEqual(rescored.score.value, fresh.score.value)
+        XCTAssertEqual(rescored.suggestions, fresh.suggestions)
+        XCTAssertEqual(rescored.previousScore, 50)
+        XCTAssertEqual(rescored.hypnogram, session.hypnogram)
     }
 
     func testGapsAreReported() {

@@ -225,3 +225,47 @@ public struct SleepScoreCalculator: Sendable {
         return (bedDeviation + wakeDeviation) / 2
     }
 }
+
+public extension SleepScore {
+    /// The same night scored with other weights. Factor scores do not depend on the weights, so a
+    /// stored night can be re-weighted exactly without the raw data.
+    func reweighted(_ weights: ScoreWeights) -> SleepScore {
+        let weightSum = components.reduce(0) { $0 + weights.weight(for: $1.factor) }
+        let reweighted = components.map { component in
+            ScoreComponent(
+                factor: component.factor,
+                score: component.score,
+                weight: weightSum > 0 ? weights.weight(for: component.factor) / weightSum : 0,
+                measuredValue: component.measuredValue
+            )
+        }
+        let total = reweighted.reduce(0) { $0 + $1.score * $1.weight }
+        let value = Int(Stats.clamp(total, 0, 100).rounded())
+        return SleepScore(value: value, components: reweighted, quality: ScoreQuality(score: value), lowConfidence: lowConfidence)
+    }
+}
+
+public extension ScoreWeights {
+    /// Normalised share of one factor, given which factors take part.
+    func share(of factor: ScoreFactor, among factors: [ScoreFactor] = ScoreFactor.allCases) -> Double {
+        let sum = factors.reduce(0) { $0 + weight(for: $1) }
+        return sum > 0 ? weight(for: factor) / sum : 0
+    }
+
+    func setting(_ factor: ScoreFactor, to value: Double) -> ScoreWeights {
+        var copy = self
+        let clamped = Stats.clamp(value, 0, 1)
+        switch factor {
+        case .duration: copy.duration = clamped
+        case .efficiency: copy.efficiency = clamped
+        case .latency: copy.latency = clamped
+        case .interruptions: copy.interruptions = clamped
+        case .restlessness: copy.restlessness = clamped
+        case .consistency: copy.consistency = clamped
+        }
+        return copy
+    }
+
+    /// True when every weight is zero (the score would be undefined).
+    var isEmpty: Bool { ScoreFactor.allCases.allSatisfy { weight(for: $0) <= 0 } }
+}

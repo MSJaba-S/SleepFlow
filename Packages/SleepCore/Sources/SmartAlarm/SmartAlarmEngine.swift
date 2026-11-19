@@ -10,6 +10,8 @@ public enum WakeReason: String, Codable, Sendable, CaseIterable {
     case nearDeadline
     /// The deadline was reached. This is also what the system alarm guarantees.
     case deadline
+    /// Power nap: deep sleep was about to begin, so waking now avoids grogginess.
+    case beforeDeepSleep
 }
 
 public enum SmartAlarmDecision: Equatable, Sendable {

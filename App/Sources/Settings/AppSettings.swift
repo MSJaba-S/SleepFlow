@@ -29,6 +29,7 @@ final class AppSettings {
         static let name = "settings.name"
         static let dimScreen = "settings.dimNightScreen"
         static let habits = "settings.wakeHabit"
+        static let weights = "settings.scoreWeights"
     }
 
     private let defaults: UserDefaults
@@ -48,6 +49,8 @@ final class AppSettings {
     var userName: String { didSet { defaults.set(userName, forKey: Key.name) } }
     /// Dim the night screen automatically after a few seconds.
     var dimNightScreen: Bool { didSet { defaults.set(dimNightScreen, forKey: Key.dimScreen) } }
+    /// How much each factor counts in the Sleep Score.
+    var scoreWeights: ScoreWeights { didSet { saveWeights() } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -67,6 +70,11 @@ final class AppSettings {
         demoMode = defaults.bool(forKey: Key.demo)
         userName = defaults.string(forKey: Key.name) ?? ""
         dimNightScreen = defaults.object(forKey: Key.dimScreen) as? Bool ?? true
+        if let data = defaults.data(forKey: Key.weights), let decoded = try? JSONDecoder().decode(ScoreWeights.self, from: data), !decoded.isEmpty {
+            scoreWeights = decoded
+        } else {
+            scoreWeights = .standard
+        }
     }
 
     var sleepGoal: TimeInterval { TimeInterval(sleepGoalMinutes * 60) }
@@ -79,7 +87,7 @@ final class AppSettings {
     }
 
     func resetAll() {
-        for key in [Key.onboarding, Key.goal, Key.method, Key.alarm, Key.clips, Key.model, Key.appearance, Key.language, Key.demo, Key.name, Key.dimScreen, Key.habits] {
+        for key in [Key.onboarding, Key.goal, Key.method, Key.alarm, Key.clips, Key.model, Key.appearance, Key.language, Key.demo, Key.name, Key.dimScreen, Key.habits, Key.weights] {
             defaults.removeObject(forKey: key)
         }
         defaults.removeObject(forKey: "AppleLanguages")
@@ -93,6 +101,13 @@ final class AppSettings {
         demoMode = false
         userName = ""
         dimNightScreen = true
+        scoreWeights = .standard
+    }
+
+    private func saveWeights() {
+        if let data = try? JSONEncoder().encode(scoreWeights) {
+            defaults.set(data, forKey: Key.weights)
+        }
     }
 
     private func saveAlarm() {

@@ -123,12 +123,29 @@ public enum SessionAssembler {
         } else {
             reason = nil
         }
+        let counting = sorted.first { $0.kind == .napCountingStarted }
         return WakeUpRecord(
             deadline: header.alarm?.deadline,
             windowStart: header.alarm?.windowStart,
             alarmTime: firstAlarm?.time,
             reason: reason,
-            snoozeCount: sorted.filter { $0.kind == .snoozed }.count
+            snoozeCount: sorted.filter { $0.kind == .snoozed }.count,
+            countedFrom: counting?.time,
+            sleepDetected: counting.map { $0.detail == "sleep" }
         )
+    }
+}
+
+public extension CompletedSession {
+    /// The night with a new score weighting. Insights and suggestions are derived again because
+    /// they depend on which factors cost the most points.
+    func rescored(with weights: ScoreWeights, previousScore: Int?) -> CompletedSession {
+        var copy = self
+        copy.score = score.reweighted(weights)
+        copy.previousScore = previousScore
+        let targets = ScoreTargets(sleepGoal: header.sleepGoal)
+        copy.insights = InsightEngine.insights(score: copy.score, metrics: metrics, targets: targets, previousScore: previousScore, noisyEpochFraction: noisyEpochFraction)
+        copy.suggestions = InsightEngine.suggestions(score: copy.score, metrics: metrics, targets: targets, noisyEpochFraction: noisyEpochFraction)
+        return copy
     }
 }
