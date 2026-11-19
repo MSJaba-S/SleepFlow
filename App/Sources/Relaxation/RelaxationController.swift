@@ -114,6 +114,10 @@ struct BreathingPattern: Identifiable, Hashable, Sendable {
 
     var cycleLength: Double { inhale + holdAfterInhale + exhale + holdAfterExhale }
 
+    // LocalizedStringResource is not Hashable, so identity is the pattern's id.
+    static func == (lhs: BreathingPattern, rhs: BreathingPattern) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+
     static let all: [BreathingPattern] = [
         BreathingPattern(id: "calm", title: "Calm breathing", detail: "In for 4, out for 6. Lengthening the exhale helps the body slow down.", inhale: 4, holdAfterInhale: 0, exhale: 6, holdAfterExhale: 0),
         BreathingPattern(id: "478", title: "4-7-8", detail: "In for 4, hold for 7, out for 8. A classic before sleep.", inhale: 4, holdAfterInhale: 7, exhale: 8, holdAfterExhale: 0),

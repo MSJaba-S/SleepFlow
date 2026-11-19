@@ -21,6 +21,10 @@ struct AlarmSound: Identifiable, Hashable, Sendable {
         all.first { $0.id == id } ?? all[0]
     }
 
+    // LocalizedStringResource is not Hashable, so identity is the sound's id.
+    static func == (lhs: AlarmSound, rhs: AlarmSound) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+
     var url: URL? {
         let name = (fileName as NSString).deletingPathExtension
         let ext = (fileName as NSString).pathExtension
