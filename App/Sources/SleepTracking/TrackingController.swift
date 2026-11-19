@@ -104,7 +104,8 @@ final class TrackingController {
             let latency: TimeInterval = napPlan == nil ? 15 * 60 : 10 * 60
             let length = napPlan.map { latency + $0.sleepDuration + 15 * 60 } ?? 7.5 * 3600
             let epochCount = max(1, length / SleepConstants.epochLength)
-            let interval = AppEnvironment.isUITesting ? 0.004 : min(0.12, max(0.02, 18 / epochCount))
+            let fast = AppEnvironment.isUITesting || AppEnvironment.isRunningUnitTests
+            let interval = fast ? 0.004 : min(0.12, max(0.02, 18 / epochCount))
             let source = SimulatedNightSource(method: method, start: now, duration: length, sleepLatency: latency, interval: interval)
             simulator = source
             if let napPlan {

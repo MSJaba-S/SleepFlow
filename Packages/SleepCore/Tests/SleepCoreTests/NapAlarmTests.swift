@@ -56,20 +56,21 @@ final class NapPlanTests: XCTestCase {
 final class SleepOnsetDetectorTests: XCTestCase {
     let start = Date(timeIntervalSince1970: 1_800_000_000)
 
-    func estimate(asleep: Double, hasData: Bool = true) -> OnlineEstimate {
-        OnlineEstimate(epochIndex: 0, probabilities: StageProbabilities(awake: 1 - asleep, light: asleep, deep: 0), arousal: false, hasData: hasData, activity: 0)
+    /// Unless stated otherwise, epochs that are probably awake also show an arousal (movement).
+    func estimate(asleep: Double, hasData: Bool = true, arousal: Bool? = nil) -> OnlineEstimate {
+        OnlineEstimate(epochIndex: 0, probabilities: StageProbabilities(awake: 1 - asleep, light: asleep, deep: 0), arousal: arousal ?? (asleep < 0.5), hasData: hasData, activity: 0)
     }
 
     func epochStart(_ index: Int) -> Date { start.addingTimeInterval(Double(index) * 30) }
 
-    func testNeedsFiveMinutesOfSleep() {
+    func testNeedsFourMinutesOfSleep() {
         var detector = SleepOnsetDetector()
         for index in 0..<4 { XCTAssertNil(detector.update(epochStart: epochStart(index), estimate: estimate(asleep: 0.1))) }
-        for index in 4..<13 { XCTAssertNil(detector.update(epochStart: epochStart(index), estimate: estimate(asleep: 0.9)), "epoch \(index)") }
-        XCTAssertEqual(detector.update(epochStart: epochStart(13), estimate: estimate(asleep: 0.9)), epochStart(4))
+        for index in 4..<11 { XCTAssertNil(detector.update(epochStart: epochStart(index), estimate: estimate(asleep: 0.9)), "epoch \(index)") }
+        XCTAssertEqual(detector.update(epochStart: epochStart(11), estimate: estimate(asleep: 0.9)), epochStart(4))
         XCTAssertEqual(detector.onset, epochStart(4))
         // Reported only once.
-        XCTAssertNil(detector.update(epochStart: epochStart(14), estimate: estimate(asleep: 0.9)))
+        XCTAssertNil(detector.update(epochStart: epochStart(12), estimate: estimate(asleep: 0.9)))
     }
 
     func testToleratesOneRestlessEpoch() {
@@ -116,15 +117,26 @@ final class SleepOnsetDetectorTests: XCTestCase {
         var detector = SleepOnsetDetector()
         var result: Date?
         for index in 0..<20 {
-            let value: Double
+            // 0–3 awake and moving, 4–6 still but not yet confidently asleep, then asleep.
+            let update: OnlineEstimate
             switch index {
-            case 0..<4: value = 0.1
-            case 4..<7: value = 0.5
-            default: value = 0.9
+            case 0..<4: update = estimate(asleep: 0.1, arousal: true)
+            case 4..<7: update = estimate(asleep: 0.2, arousal: false)
+            default: update = estimate(asleep: 0.9)
             }
-            result = detector.update(epochStart: epochStart(index), estimate: estimate(asleep: value)) ?? result
+            result = detector.update(epochStart: epochStart(index), estimate: update) ?? result
         }
         XCTAssertEqual(result, epochStart(4))
+    }
+
+    func testBackdatingStopsAtTheLastMovement() {
+        var detector = SleepOnsetDetector()
+        var result: Date?
+        for index in 0..<30 {
+            let update = index < 12 ? estimate(asleep: 0.1, arousal: index == 11 || index < 5) : estimate(asleep: 0.9)
+            result = detector.update(epochStart: epochStart(index), estimate: update) ?? result
+        }
+        XCTAssertEqual(result, epochStart(12), "The movement at epoch 11 marks the end of being awake")
     }
 
     func testGapsNeitherConfirmNorBreak() {
@@ -142,8 +154,9 @@ final class SleepOnsetDetectorTests: XCTestCase {
 final class NapTrackerTests: XCTestCase {
     let start = Date(timeIntervalSince1970: 1_800_000_000)
 
+    /// Awake epochs come with movement (an arousal), sleeping ones without.
     func estimate(awake: Double, light: Double, deep: Double, hasData: Bool = true) -> OnlineEstimate {
-        OnlineEstimate(epochIndex: 0, probabilities: StageProbabilities(awake: awake, light: light, deep: deep), arousal: false, hasData: hasData, activity: 0)
+        OnlineEstimate(epochIndex: 0, probabilities: StageProbabilities(awake: awake, light: light, deep: deep), arousal: awake >= 0.5, hasData: hasData, activity: 0)
     }
 
     func epochStart(_ index: Int) -> Date { start.addingTimeInterval(Double(index) * 30) }

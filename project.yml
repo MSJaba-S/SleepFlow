@@ -20,6 +20,7 @@ settings:
     DEVELOPMENT_LANGUAGE: en
     ENABLE_PREVIEWS: YES
     LOCALIZATION_PREFERS_STRING_CATALOGS: NO
+    SWIFT_EMIT_LOC_STRINGS: YES
 
 targets:
   SleepFlow:
@@ -70,6 +71,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.samir.SleepFlowTests
         GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/SleepFlow.app/SleepFlow"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 
   SleepFlowUITests:
     type: bundle.ui-testing

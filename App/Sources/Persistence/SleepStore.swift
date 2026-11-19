@@ -46,7 +46,7 @@ final class SleepStore {
         context.insert(record)
         // Attach a journal entry that was written before the session was saved (same night).
         let night = StatisticsCalculator.nightDate(for: session.header.start, calendar: .current)
-        if let entry = journalEntries(demo: demo).first(where: { $0.night == night && $0.session == nil }) {
+        if session.header.napPlan == nil, let entry = journalEntries(demo: demo).first(where: { $0.night == night && $0.session == nil }) {
             entry.session = record
         }
         try context.save()
@@ -167,7 +167,7 @@ final class SleepStore {
             return existing
         }
         guard create else { return nil }
-        let session = sessions(demo: demo).first { StatisticsCalculator.nightDate(for: $0.start, calendar: .current) == night }
+        let session = sessions(demo: demo).first { !$0.isNap && StatisticsCalculator.nightDate(for: $0.start, calendar: .current) == night }
         let entry = JournalEntryRecord(night: night, session: session)
         context(demo: demo).insert(entry)
         try? context(demo: demo).save()

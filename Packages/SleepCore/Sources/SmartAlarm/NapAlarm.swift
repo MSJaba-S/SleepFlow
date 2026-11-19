@@ -29,7 +29,7 @@ public struct NapPlan: Codable, Sendable, Hashable {
         maximumLatency: TimeInterval,
         wakesBeforeDeepSleep: Bool,
         minimumSleepBeforeGuard: TimeInterval = 10 * 60,
-        deepSleepProbability: Double = 0.45,
+        deepSleepProbability: Double = 0.35,
         deepSleepEpochs: Int = 2
     ) {
         self.sleepDuration = max(60, sleepDuration)
@@ -47,7 +47,7 @@ public struct NapPlan: Codable, Sendable, Hashable {
         return NapPlan(
             sleepDuration: TimeInterval(minutes * 60),
             window: TimeInterval((minutes <= 20 ? 5 : 10) * 60),
-            maximumLatency: 20 * 60,
+            maximumLatency: 30 * 60,
             wakesBeforeDeepSleep: true,
             minimumSleepBeforeGuard: TimeInterval(min(10, max(4, minutes / 2)) * 60)
         )
@@ -104,19 +104,19 @@ public struct NapPlan: Codable, Sendable, Hashable {
 /// awake epoch start the search again. Epochs without sensor data neither confirm nor break a run.
 ///
 /// The estimate needs a few minutes to become confident, so the onset is dated back over the
-/// drifting-off phase just before the run (epochs that were already more likely asleep than
-/// `backdateProbability`), at most `maximumBackdate`.
+/// drifting-off phase just before the run: the still epochs (no movement or sound arousal) that
+/// led into it, at most `maximumBackdate`.
 public struct SleepOnsetDetector: Sendable, Hashable {
     public var asleepProbability: Double
     public var confirmationEpochs: Int
     public var toleratedBreaks: Int
     public var clearlyAwakeProbability: Double
-    public var backdateProbability: Double
     public var maximumBackdate: TimeInterval
 
     private struct Sample: Sendable, Hashable {
         var start: Date
         var asleep: Double
+        var still: Bool
     }
 
     public private(set) var onset: Date?
@@ -128,17 +128,15 @@ public struct SleepOnsetDetector: Sendable, Hashable {
 
     public init(
         asleepProbability: Double = 0.7,
-        confirmationEpochs: Int = 10,
+        confirmationEpochs: Int = 8,
         toleratedBreaks: Int = 2,
         clearlyAwakeProbability: Double = 0.85,
-        backdateProbability: Double = 0.3,
         maximumBackdate: TimeInterval = 10 * 60
     ) {
         self.asleepProbability = asleepProbability
         self.confirmationEpochs = max(1, confirmationEpochs)
         self.toleratedBreaks = max(0, toleratedBreaks)
         self.clearlyAwakeProbability = clearlyAwakeProbability
-        self.backdateProbability = backdateProbability
         self.maximumBackdate = max(0, maximumBackdate)
     }
 
@@ -146,7 +144,7 @@ public struct SleepOnsetDetector: Sendable, Hashable {
     public mutating func update(epochStart: Date, estimate: OnlineEstimate) -> Date? {
         guard onset == nil, estimate.hasData else { return nil }
         let p = estimate.probabilities
-        recent.append(Sample(start: epochStart, asleep: p.light + p.deep))
+        recent.append(Sample(start: epochStart, asleep: p.light + p.deep, still: !estimate.arousal))
         if recent.count > 60 { recent.removeFirst(recent.count - 60) }
         if p.light + p.deep >= asleepProbability {
             if runStart == nil {
@@ -177,7 +175,7 @@ public struct SleepOnsetDetector: Sendable, Hashable {
         var begin = runStart
         var cursor = index - 1
         while cursor >= 0,
-              recent[cursor].asleep >= backdateProbability,
+              recent[cursor].still,
               runStart.timeIntervalSince(recent[cursor].start) <= maximumBackdate {
             begin = recent[cursor].start
             cursor -= 1
