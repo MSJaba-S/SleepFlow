@@ -3,8 +3,14 @@ name: Byg SleepFlow
 on:
   push:
     branches: [main]
+    tags: ["v*"]
     paths-ignore: ["**.md", "docs/**", "guide/**"]
   workflow_dispatch:
+    inputs:
+      ui_tests:
+        description: "Kør UI-tests på simulatoren"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -49,3 +55,243 @@ jobs:
             core-tests.log
             core-errors.txt
           if-no-files-found: ignore
+
+  app:
+    name: iPhone-app – byg, tests og .ipa
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      DERIVED: build/dd
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vælg nyeste stabile Xcode
+        run: |
+          X=$(ls -d /Applications/Xcode_*.app | grep -viE 'beta|rc' | sort -V | tail -1)
+          sudo xcode-select -s "$X"
+          xcodebuild -version
+
+      - name: Generér Xcode-projekt
+        run: |
+          brew install xcodegen > /dev/null
+          xcodegen generate
+
+      - name: Vælg simulator
+        id: sim
+        run: echo "udid=$(python3 ci/pick-simulator.py)" >> "$GITHUB_OUTPUT"
+
+      - name: Byg til simulator (app og tests)
+        run: |
+          set +e
+          xcodebuild build-for-testing \
+            -project SleepFlow.xcodeproj \
+            -scheme SleepFlow \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath "$DERIVED" \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            > build-sim.log 2>&1
+          status=$?
+          tail -n 15 build-sim.log
+          exit $status
+
+      - name: Lokaliseringstjek (dansk)
+        continue-on-error: true
+        run: python3 ci/check-localization.py "$DERIVED" App/Resources/da.lproj/Localizable.strings localization-report.txt
+
+      - name: Unit-tests
+        run: |
+          set +e
+          xcodebuild test-without-building \
+            -project SleepFlow.xcodeproj \
+            -scheme SleepFlow \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath "$DERIVED" \
+            -only-testing:SleepFlowTests \
+            -resultBundlePath build/UnitTests.xcresult \
+            > unit-tests.log 2>&1
+          status=$?
+          grep -E "Test Suite 'All tests'|Executed [0-9]+ tests|error: -\[|failed \(" unit-tests.log | tail -n 40
+          if [ $status -eq 0 ]; then echo "UNIT_TESTS=passed" >> "$GITHUB_ENV"; fi
+          exit $status
+
+      - name: UI-tests
+        if: github.event_name != 'workflow_dispatch' || inputs.ui_tests
+        continue-on-error: true
+        run: |
+          set +e
+          xcodebuild test-without-building \
+            -project SleepFlow.xcodeproj \
+            -scheme SleepFlow \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath "$DERIVED" \
+            -only-testing:SleepFlowUITests \
+            -resultBundlePath build/UITests.xcresult \
+            > ui-tests.log 2>&1
+          status=$?
+          grep -E "Test Suite 'All tests'|Executed [0-9]+ tests|error: -\[|failed \(" ui-tests.log | tail -n 40
+          if [ $status -eq 0 ]; then
+            echo "UI_TESTS=passed" >> "$GITHUB_ENV"
+          else
+            echo "UI_TESTS=FAILED (see ui-tests.log in the run artifacts)" >> "$GITHUB_ENV"
+          fi
+          exit $status
+
+      - name: Byg til iPhone (Release, usigneret)
+        run: |
+          set +e
+          xcodebuild build \
+            -project SleepFlow.xcodeproj \
+            -scheme SleepFlow \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/device \
+            -skipMacroValidation \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            > build-device.log 2>&1
+          status=$?
+          tail -n 15 build-device.log
+          exit $status
+
+      - name: Pak SleepFlow.ipa
+        run: |
+          APP="build/device/Build/Products/Release-iphoneos/SleepFlow.app"
+          test -d "$APP"
+          plutil -p "$APP/Info.plist" | grep -E "CFBundleIdentifier|CFBundleShortVersionString|CFBundleVersion|MinimumOSVersion"
+          test -f "$APP/sunrise.wav"
+          test -d "$APP/da.lproj"
+          rm -rf Payload && mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qry SleepFlow.ipa Payload
+          echo "APP_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")" >> "$GITHUB_ENV"
+          echo "::notice title=IPA::SleepFlow.ipa ($(du -h SleepFlow.ipa | cut -f1)) – usigneret, signeres ved installation"
+
+      # Optional: a signed IPA, only when signing material exists as repository secrets.
+      # IOS_CERTIFICATE_P12_BASE64, IOS_CERTIFICATE_PASSWORD, IOS_PROVISIONING_PROFILE_BASE64.
+      # Nothing is ever written to the repository; the keychain is temporary and deleted afterwards.
+      - name: Tjek om signering er sat op
+        id: signing
+        env:
+          CERT: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          if [ -n "$CERT" ] && [ -n "$PROFILE" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "SIGNING_STATUS=unsigned (no signing secrets; sign at install time with iPhone-Installer)" >> "$GITHUB_ENV"
+          fi
+
+      - name: Signér med midlertidig nøglering
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          CERT: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN="$RUNNER_TEMP/sleepflow-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
+          echo "::add-mask::$KEYCHAIN_PASSWORD"
+          printf '%s' "$CERT" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          printf '%s' "$PROFILE" | base64 --decode > "$RUNNER_TEMP/profile.mobileprovision"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN" > /dev/null
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          security cms -D -i "$RUNNER_TEMP/profile.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/profile.plist")
+          TEAM=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$RUNNER_TEMP/profile.plist")
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RUNNER_TEMP/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
+          xcodebuild archive \
+            -project SleepFlow.xcodeproj -scheme SleepFlow -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/SleepFlow.xcarchive \
+            -derivedDataPath build/signed -skipMacroValidation \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$TEAM" PROVISIONING_PROFILE_SPECIFIER="$UUID" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN" > build-signed.log 2>&1 || { tail -n 40 build-signed.log; exit 1; }
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>debugging</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>teamID</key><string>$TEAM</string>
+            <key>provisioningProfiles</key><dict><key>com.samir.SleepFlow</key><string>$UUID</string></dict>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath build/SleepFlow.xcarchive \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath build/export > export.log 2>&1 || { tail -n 40 export.log; exit 1; }
+          cp build/export/SleepFlow.ipa SleepFlow.ipa
+          echo "SIGNING_STATUS=signed in CI (team $TEAM)" >> "$GITHUB_ENV"
+
+      - name: Ryd signeringsmateriale op
+        if: always() && steps.signing.outputs.enabled == 'true'
+        run: |
+          security delete-keychain "$RUNNER_TEMP/sleepflow-signing.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/cert.p12" "$RUNNER_TEMP/profile.mobileprovision" "$RUNNER_TEMP/profile.plist" "$RUNNER_TEMP/ExportOptions.plist"
+          rm -rf "$HOME/Library/MobileDevice/Provisioning Profiles"
+
+      - name: Kildekode, build-information og kontrolsummer
+        run: |
+          git archive --format=zip --prefix=SleepFlow/ -o Source-Code.zip HEAD
+          bash ci/build-info.sh Build-Information.txt
+          shasum -a 256 SleepFlow.ipa Source-Code.zip Build-Information.txt > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Udgiv som 'Seneste build'
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create latest SleepFlow.ipa Source-Code.zip Build-Information.txt SHA256SUMS.txt \
+            --title "SleepFlow – seneste build" \
+            --notes "Bygget $(date -u '+%Y-%m-%d %H:%M') UTC fra ${GITHUB_SHA::7} (version ${APP_VERSION}, build ${BUILD_NUMBER}). Hent SleepFlow.ipa og installer med iPhone-Installer (release 'installer' i Transkriptor-repoet). Se Build-Information.txt for tests og signering." \
+            --target "$GITHUB_SHA" \
+            --prerelease
+
+      - name: Udgiv version
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" SleepFlow.ipa Source-Code.zip Build-Information.txt SHA256SUMS.txt \
+            --title "SleepFlow $GITHUB_REF_NAME" \
+            --notes "SleepFlow $GITHUB_REF_NAME (build ${BUILD_NUMBER}). Installer SleepFlow.ipa med iPhone-Installer. Kontrolsummer i SHA256SUMS.txt."
+
+      - name: Rapportér fejl
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for log in build-sim.log build-device.log unit-tests.log ui-tests.log; do
+            [ -f "$log" ] && python3 ci/report-errors.py "$log" "${log%.log}-errors.txt" || true
+          done
+          cat build-sim-errors.txt build-device-errors.txt 2>/dev/null | head -c 60000 > build-errors.txt || true
+          [ -s build-errors.txt ] && bash ci/push-log.sh build-errors.txt build-errors.txt || true
+
+      - name: Gem logs og testresultater
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-logs
+          path: |
+            build-sim.log
+            build-device.log
+            unit-tests.log
+            ui-tests.log
+            localization-report.txt
+            *-errors.txt
+            build/UnitTests.xcresult
+            build/UITests.xcresult
+          if-no-files-found: ignore
+          retention-days: 14
