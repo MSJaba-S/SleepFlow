@@ -128,7 +128,9 @@ struct NightModeView: View {
 
     @ViewBuilder
     private var alarmLine: some View {
-        if case .snoozed(let until, _) = alarms.ringState {
+        if let plan = tracking.napPlan, alarms.ringState == .idle {
+            napLine(plan)
+        } else if case .snoozed(let until, _) = alarms.ringState {
             Label("Snoozing until \(Formatters.time(until))", systemImage: "zzz")
                 .font(.headline)
                 .foregroundStyle(Theme.accentSoft)
@@ -152,6 +154,43 @@ struct NightModeView: View {
             Label("No alarm tonight", systemImage: "alarm.waves.left.and.right")
                 .font(.subheadline)
                 .foregroundStyle(Color.white.opacity(0.5))
+        }
+    }
+
+    /// Wake after sleep: waiting for sleep, then the window in which SleepFlow will wake you.
+    @ViewBuilder
+    private func napLine(_ plan: NapPlan) -> some View {
+        VStack(spacing: 6) {
+            plan.title
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.white.opacity(0.6))
+            if let countStart = tracking.napCountStart, let occurrence = tracking.active?.occurrence {
+                Group {
+                    if tracking.napSleepDetected {
+                        Label("Asleep since \(Formatters.time(countStart))", systemImage: "moon.zzz.fill")
+                    } else {
+                        Label("Counting since \(Formatters.time(countStart))", systemImage: "moon.zzz.fill")
+                    }
+                }
+                .font(.headline)
+                .foregroundStyle(Theme.accentSoft)
+                .accessibilityIdentifier("night.napCounting")
+                Text("Wakes you in light sleep between \(Formatters.time(occurrence.windowStart)) and \(Formatters.time(occurrence.deadline)).")
+                    .font(.footnote)
+                    .foregroundStyle(Color.white.opacity(0.5))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if let start = tracking.active?.header.start {
+                Label("Waiting for you to fall asleep…", systemImage: "hourglass")
+                    .font(.headline)
+                    .foregroundStyle(Theme.accentSoft)
+                    .accessibilityIdentifier("night.napWaiting")
+                Text("Counting starts when SleepFlow notices that you are asleep – at the latest at \(Formatters.time(plan.latestCountStart(start: start))).")
+                    .font(.footnote)
+                    .foregroundStyle(Color.white.opacity(0.5))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

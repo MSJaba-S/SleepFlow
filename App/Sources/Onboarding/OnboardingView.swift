@@ -104,7 +104,7 @@ private struct WelcomePage: View {
         OnboardingPage(symbol: "moon.stars", title: "Sleep better with SleepFlow", subtitle: "SleepFlow listens to your night, estimates how you slept and wakes you at a good moment.") {
             VStack(alignment: .leading, spacing: 18) {
                 InfoRow(symbol: "waveform", title: "Tracks your night", text: "Sound or movement analysis on your iPhone shows when you were awake, in light or in deep sleep.")
-                InfoRow(symbol: "alarm", title: "Smart Alarm", text: "Wakes you in a light phase within the window you choose – never later than your alarm time.")
+                InfoRow(symbol: "alarm", title: "Smart Alarm", text: "Wakes you in a light phase – at a set time, or after a power nap or whole sleep cycles counted from when you fall asleep.")
                 InfoRow(symbol: "chart.line.uptrend.xyaxis", title: "Understand your habits", text: "Morning reports, a Sleep Score and long-term statistics.")
                 InfoRow(symbol: "lock.shield", title: "Private by design", text: "Everything is processed and stored on your iPhone. No account, no cloud, no tracking.")
             }

@@ -70,16 +70,22 @@ final class SleepStore {
         return try? context(demo: demo).fetch(descriptor).first
     }
 
-    /// Bed and wake times of nights before `date`, newest first, for the consistency factor.
+    /// Bed and wake times of nights (not naps) before `date`, newest first, for the consistency factor.
     func history(before date: Date, demo: Bool, limit: Int = 14) -> [HistoricalNight] {
         sessions(demo: demo)
-            .filter { $0.start < date }
+            .filter { $0.start < date && !$0.isNap }
             .prefix(limit)
             .map { HistoricalNight(bedtime: $0.sleepOnset ?? $0.start, wakeTime: $0.finalAwakening ?? $0.end) }
     }
 
-    func previousScore(before date: Date, demo: Bool) -> Int? {
-        sessions(demo: demo).first { $0.start < date }?.score
+    /// Score of the previous session of the same kind (night or nap).
+    func previousScore(before date: Date, demo: Bool, nap: Bool = false) -> Int? {
+        sessions(demo: demo).first { $0.start < date && $0.isNap == nap }?.score
+    }
+
+    /// Nights only – naps are shown separately and kept out of statistics.
+    func nights(demo: Bool) -> [SleepSessionRecord] {
+        sessions(demo: demo).filter { !$0.isNap }
     }
 
     func delete(_ record: SleepSessionRecord, demo: Bool) {

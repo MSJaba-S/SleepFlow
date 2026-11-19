@@ -77,15 +77,17 @@ struct ReportView: View {
                 }
                 ScoreBreakdownCard(score: session.score)
                 if session.wakeUp.deadline != nil {
-                    WakeUpCard(wakeUp: session.wakeUp, smart: session.header.smartAlarmEnabled)
+                    WakeUpCard(wakeUp: session.wakeUp, smart: session.header.smartAlarmEnabled, napPlan: session.header.napPlan)
                 }
                 ActivityCard(session: session)
                 if session.header.method == .microphone {
                     SoundsCard(session: session, clipPlayer: clipPlayer, onDeleteClip: deleteClip)
                 }
                 SuggestionsCard(suggestions: session.suggestions)
-                JournalPromptCard(night: StatisticsCalculator.nightDate(for: session.header.start, calendar: .current)) { night in
-                    journalRoute = JournalRoute(night: night)
+                if session.header.napPlan == nil {
+                    JournalPromptCard(night: StatisticsCalculator.nightDate(for: session.header.start, calendar: .current)) { night in
+                        journalRoute = JournalRoute(night: night)
+                    }
                 }
                 DataQualityCard(session: session)
                 Text("SleepFlow estimates sleep from sound and movement. It is not a medical device and cannot diagnose sleep disorders.")
@@ -132,7 +134,13 @@ private struct ReportHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Night of \(Formatters.dayAndDate(StatisticsCalculator.nightDate(for: session.header.start, calendar: .current)))")
+            Group {
+                if session.header.napPlan != nil {
+                    Text("Nap on \(Formatters.dayAndDate(session.header.start))")
+                } else {
+                    Text("Night of \(Formatters.dayAndDate(StatisticsCalculator.nightDate(for: session.header.start, calendar: .current)))")
+                }
+            }
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Theme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -411,18 +419,40 @@ private struct ScoreComponentRow: View {
 private struct WakeUpCard: View {
     let wakeUp: WakeUpRecord
     let smart: Bool
+    let napPlan: NapPlan?
 
     var body: some View {
         Card {
             VStack(alignment: .leading, spacing: 12) {
-                SectionTitle(title: "Wake-up")
+                SectionTitle(title: napPlan == nil ? "Wake-up" : "Wake after sleep")
+                if let napPlan {
+                    napPlan.title
+                        .font(.headline)
+                        .foregroundStyle(Theme.textPrimary)
+                }
                 if let summary = wakeUp.summary {
                     summary
                         .font(.subheadline)
                         .foregroundStyle(Theme.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                if let deadline = wakeUp.deadline {
+                if napPlan != nil {
+                    if let countedFrom = wakeUp.countedFrom {
+                        DetailRow(title: wakeUp.sleepDetected == true ? "Fell asleep" : "Counting started", value: Formatters.time(countedFrom))
+                        if wakeUp.sleepDetected != true {
+                            Text("No sleep was detected in time, so counting started anyway.")
+                                .font(.footnote)
+                                .foregroundStyle(Theme.textTertiary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    if let napSleep = wakeUp.napSleep {
+                        DetailRow(title: "Slept before the alarm", value: Formatters.duration(napSleep))
+                    }
+                    if let deadline = wakeUp.deadline, let windowStart = wakeUp.windowStart {
+                        DetailRow(title: "Wake-up window", value: Formatters.timeRange(windowStart, deadline))
+                    }
+                } else if let deadline = wakeUp.deadline {
                     DetailRow(title: "Alarm time", value: Formatters.time(deadline))
                     if smart, let windowStart = wakeUp.windowStart {
                         DetailRow(title: "Smart Alarm window", value: Formatters.timeRange(windowStart, deadline))

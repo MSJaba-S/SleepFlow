@@ -134,7 +134,7 @@ final class TrackingController {
             method: method,
             alarm: occurrence,
             smartAlarmEnabled: occurrence != nil && (napPlan != nil || settings.alarm.isSmartEnabled),
-            sleepGoal: settings.sleepGoal,
+            sleepGoal: napPlan?.sleepDuration ?? settings.sleepGoal,
             isSimulated: simulated,
             appVersion: AppEnvironment.appVersion,
             timeZoneIdentifier: TimeZone.current.identifier,
@@ -430,8 +430,8 @@ final class TrackingController {
             soundEvents: sounds,
             movementEvents: movements,
             markers: markers,
-            history: store.history(before: active.header.start, demo: demo),
-            previousScore: store.previousScore(before: active.header.start, demo: demo),
+            history: header.napPlan == nil ? store.history(before: active.header.start, demo: demo) : [],
+            previousScore: store.previousScore(before: active.header.start, demo: demo, nap: header.napPlan != nil),
             weights: settings.scoreWeights,
             calendar: .current
         )
@@ -609,8 +609,8 @@ final class TrackingController {
             soundEvents: recovered.soundEvents,
             movementEvents: recovered.movementEvents,
             markers: markers,
-            history: store.history(before: recovered.header.start, demo: false),
-            previousScore: store.previousScore(before: recovered.header.start, demo: false),
+            history: header.napPlan == nil ? store.history(before: recovered.header.start, demo: false) : [],
+            previousScore: store.previousScore(before: recovered.header.start, demo: false, nap: header.napPlan != nil),
             weights: settings.scoreWeights
         )
         let completed = await Task.detached(priority: .userInitiated) { SessionAssembler.assemble(input) }.value

@@ -76,5 +76,71 @@ enum DemoDataGenerator {
             }
             await Task.yield()
         }
+
+        // A few naps, analysed exactly like a live "wake after sleep" session.
+        let naps: [(daysAgo: Int, plan: NapPlan)] = [(9, .cycles(1)), (4, .powerNap(minutes: 20)), (1, .powerNap(minutes: 30))]
+        for (daysAgo, plan) in naps where daysAgo < nights {
+            guard let day = calendar.date(byAdding: .day, value: -daysAgo, to: today) else { continue }
+            let start = day.addingTimeInterval((14 * 60 + 20 + rng.gaussian(sd: 20)) * 60)
+            saveDemoNap(plan: plan, start: start, seed: UInt64(daysAgo) &* 104_729, store: store, settings: settings)
+            await Task.yield()
+        }
+    }
+
+    private static func saveDemoNap(plan: NapPlan, start: Date, seed: UInt64, store: SleepStore, settings: AppSettings) {
+        let method: TrackingMethod = .microphone
+        let length = plan.latestDeadline(start: start).timeIntervalSince(start) + 15 * 60
+        let scenario = NightScenario(method: method, bedtime: start, timeInBed: length, sleepLatency: 9 * 60, awakenings: 0, snoringPropensity: 0.1, restlessness: 0.3)
+        let night = NightSimulator.simulate(scenario, seed: seed)
+        let key = NapPlan.key(start: start, calendar: .current)
+        let estimator = OnlineSleepEstimator(method: method)
+        var tracker = NapTracker(plan: plan, key: key, start: start)
+        var engine = SmartAlarmEngine()
+        var markers = [SessionMarker(time: start, kind: .batteryLevel, detail: "88 % charging")]
+        var end = night.end
+        var epochs: [EpochFeatures] = []
+        for epoch in night.epochs {
+            epochs.append(epoch)
+            let estimate = estimator.update(with: epoch)
+            let update = tracker.update(epochStart: epoch.start, estimate: estimate)
+            if case .countingStarted(let at, let detected, _) = update {
+                markers.append(SessionMarker(time: at, kind: .napCountingStarted, detail: detected ? "sleep" : "latest"))
+            }
+            var reason: WakeReason?
+            if update == .wakeBeforeDeepSleep {
+                reason = .beforeDeepSleep
+            } else if case .wake(let decided) = engine.evaluate(now: epoch.end, occurrence: tracker.occurrence, estimate: estimate) {
+                reason = decided
+            }
+            if let reason {
+                markers.append(SessionMarker(time: epoch.end, kind: reason == .deadline ? .alarmRang : .smartAlarmTriggered, detail: reason.rawValue))
+                end = epoch.end.addingTimeInterval(60)
+                break
+            }
+        }
+        markers.append(SessionMarker(time: end, kind: .ended))
+        let header = SessionHeader(
+            start: start,
+            method: method,
+            alarm: tracker.occurrence,
+            smartAlarmEnabled: true,
+            sleepGoal: plan.sleepDuration,
+            isSimulated: true,
+            appVersion: AppEnvironment.appVersion,
+            timeZoneIdentifier: TimeZone.current.identifier,
+            napPlan: plan
+        )
+        let input = SessionAssemblyInput(
+            header: header,
+            end: end,
+            epochs: epochs,
+            soundEvents: night.soundEvents.filter { $0.start < end },
+            movementEvents: night.movementEvents.filter { $0.start < end },
+            markers: markers,
+            history: [],
+            previousScore: store.previousScore(before: start, demo: true, nap: true),
+            weights: settings.scoreWeights
+        )
+        _ = try? store.save(SessionAssembler.assemble(input), demo: true)
     }
 }

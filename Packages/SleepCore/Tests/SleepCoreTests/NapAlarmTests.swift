@@ -112,6 +112,21 @@ final class SleepOnsetDetectorTests: XCTestCase {
         XCTAssertEqual(result, epochStart(5))
     }
 
+    func testOnsetIsDatedBackToTheDriftingOffPhase() {
+        var detector = SleepOnsetDetector()
+        var result: Date?
+        for index in 0..<20 {
+            let value: Double
+            switch index {
+            case 0..<4: value = 0.1
+            case 4..<7: value = 0.5
+            default: value = 0.9
+            }
+            result = detector.update(epochStart: epochStart(index), estimate: estimate(asleep: value)) ?? result
+        }
+        XCTAssertEqual(result, epochStart(4))
+    }
+
     func testGapsNeitherConfirmNorBreak() {
         var detector = SleepOnsetDetector()
         var result: Date?
@@ -298,8 +313,10 @@ final class NapSimulationTests: XCTestCase {
             let summary = errors.map { String(format: "%.1f", $0) }.joined(separator: ", ")
             print("Onset error (\(method.rawValue)) in minutes: \(summary)")
             XCTAssertEqual(errors.count, 12)
-            let close = errors.filter { abs($0) <= 6 }.count
+            let close = errors.filter { abs($0) <= 4 }.count
             XCTAssertGreaterThanOrEqual(close, 10, "\(method): onset error too large: \(summary)")
+            let mean = errors.reduce(0, +) / Double(max(1, errors.count))
+            XCTAssertLessThanOrEqual(abs(mean), 3, "\(method): onset is biased by \(mean) min")
         }
     }
 
@@ -319,12 +336,20 @@ final class NapSimulationTests: XCTestCase {
                 let reason: String = outcome.reason?.rawValue ?? "-"
                 let minute: Int = Int(wake.timeIntervalSince(start) / 60)
                 let truth: String = outcome.truthStage(at: wake, start: start).map { String(describing: $0) } ?? "?"
-                lines.append("seed \(seed): \(reason) at \(minute) min, truth \(truth)")
+                let onsetMinute: Double = (outcome.trueOnset?.timeIntervalSince(start) ?? -60) / 60
+                let deepMinute: Double = (outcome.trueDeepStart?.timeIntervalSince(start) ?? -60) / 60
+                let countMinute: Double = (outcome.countStart?.timeIntervalSince(start) ?? -60) / 60
+                lines.append("seed \(seed): \(reason) at \(minute) min, truth \(truth); onset \(onsetMinute), counted from \(countMinute), deep from \(deepMinute)")
             }
             print("Power nap (\(method.rawValue)):\n" + lines.joined(separator: "\n"))
             // Woken at most a few minutes into deep sleep, never deep into it.
-            for minutes in intoDeep {
+            let sorted = intoDeep.sorted()
+            print("Minutes into deep sleep (\(method.rawValue)): \(sorted)")
+            for minutes in sorted {
                 XCTAssertLessThanOrEqual(minutes, 8, "\(method): woke \(minutes) min into deep sleep\n" + lines.joined(separator: "\n"))
+            }
+            if !sorted.isEmpty {
+                XCTAssertLessThanOrEqual(sorted[sorted.count / 2], 4, "\(method): median too far into deep sleep")
             }
         }
     }

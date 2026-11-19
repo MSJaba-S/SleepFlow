@@ -29,7 +29,7 @@ public struct NapPlan: Codable, Sendable, Hashable {
         maximumLatency: TimeInterval,
         wakesBeforeDeepSleep: Bool,
         minimumSleepBeforeGuard: TimeInterval = 10 * 60,
-        deepSleepProbability: Double = 0.6,
+        deepSleepProbability: Double = 0.45,
         deepSleepEpochs: Int = 2
     ) {
         self.sleepDuration = max(60, sleepDuration)
@@ -49,7 +49,7 @@ public struct NapPlan: Codable, Sendable, Hashable {
             window: TimeInterval((minutes <= 20 ? 5 : 10) * 60),
             maximumLatency: 20 * 60,
             wakesBeforeDeepSleep: true,
-            minimumSleepBeforeGuard: TimeInterval(min(12, max(5, minutes / 2)) * 60)
+            minimumSleepBeforeGuard: TimeInterval(min(10, max(4, minutes / 2)) * 60)
         )
     }
 
@@ -98,34 +98,56 @@ public struct NapPlan: Codable, Sendable, Hashable {
 
 /// Finds the moment of falling asleep while tracking, from the online stage estimate.
 ///
-/// Sleep onset is the start of the first run of `confirmationEpochs` epochs (5 minutes by default)
-/// that are probably asleep. People often move a few times while drifting off, so single restless
-/// epochs are tolerated; two restless epochs in a row, more than `toleratedBreaks` in total, or one
-/// clearly awake epoch start the search again. Epochs without sensor data neither confirm nor break
-/// a run.
+/// Sleep is confirmed by a run of `confirmationEpochs` epochs (5 minutes by default) that are
+/// probably asleep. People often move a few times while drifting off, so single restless epochs are
+/// tolerated; two restless epochs in a row, more than `toleratedBreaks` in total, or one clearly
+/// awake epoch start the search again. Epochs without sensor data neither confirm nor break a run.
+///
+/// The estimate needs a few minutes to become confident, so the onset is dated back over the
+/// drifting-off phase just before the run (epochs that were already more likely asleep than
+/// `backdateProbability`), at most `maximumBackdate`.
 public struct SleepOnsetDetector: Sendable, Hashable {
     public var asleepProbability: Double
     public var confirmationEpochs: Int
     public var toleratedBreaks: Int
     public var clearlyAwakeProbability: Double
+    public var backdateProbability: Double
+    public var maximumBackdate: TimeInterval
+
+    private struct Sample: Sendable, Hashable {
+        var start: Date
+        var asleep: Double
+    }
 
     public private(set) var onset: Date?
     private var runStart: Date?
     private var runEpochs = 0
     private var breaks = 0
     private var consecutiveBreaks = 0
+    private var recent: [Sample] = []
 
-    public init(asleepProbability: Double = 0.7, confirmationEpochs: Int = 10, toleratedBreaks: Int = 2, clearlyAwakeProbability: Double = 0.85) {
+    public init(
+        asleepProbability: Double = 0.7,
+        confirmationEpochs: Int = 10,
+        toleratedBreaks: Int = 2,
+        clearlyAwakeProbability: Double = 0.85,
+        backdateProbability: Double = 0.3,
+        maximumBackdate: TimeInterval = 10 * 60
+    ) {
         self.asleepProbability = asleepProbability
         self.confirmationEpochs = max(1, confirmationEpochs)
         self.toleratedBreaks = max(0, toleratedBreaks)
         self.clearlyAwakeProbability = clearlyAwakeProbability
+        self.backdateProbability = backdateProbability
+        self.maximumBackdate = max(0, maximumBackdate)
     }
 
     /// Returns the onset once, on the epoch that confirms it.
     public mutating func update(epochStart: Date, estimate: OnlineEstimate) -> Date? {
         guard onset == nil, estimate.hasData else { return nil }
         let p = estimate.probabilities
+        recent.append(Sample(start: epochStart, asleep: p.light + p.deep))
+        if recent.count > 60 { recent.removeFirst(recent.count - 60) }
         if p.light + p.deep >= asleepProbability {
             if runStart == nil {
                 runStart = epochStart
@@ -142,10 +164,25 @@ public struct SleepOnsetDetector: Sendable, Hashable {
             }
         }
         if let start = runStart, runEpochs >= confirmationEpochs {
-            onset = start
-            return start
+            let begin = backdated(start)
+            onset = begin
+            return begin
         }
         return nil
+    }
+
+    /// The first epoch of the drifting-off phase that led into the confirmed run.
+    private func backdated(_ runStart: Date) -> Date {
+        guard let index = recent.firstIndex(where: { $0.start == runStart }) else { return runStart }
+        var begin = runStart
+        var cursor = index - 1
+        while cursor >= 0,
+              recent[cursor].asleep >= backdateProbability,
+              runStart.timeIntervalSince(recent[cursor].start) <= maximumBackdate {
+            begin = recent[cursor].start
+            cursor -= 1
+        }
+        return begin
     }
 
     private mutating func restart() {

@@ -33,13 +33,17 @@ struct DashboardView: View {
                 }
                 startCard
                 AlarmSummaryCard()
-                if let latest = sessions.first {
+                let nights = sessions.filter { !$0.isNap }
+                if let nap = sessions.first, nap.isNap {
+                    LatestNapCard(record: nap)
+                }
+                if let latest = nights.first {
                     LastNightCard(record: latest)
                 } else {
                     FirstNightCard()
                 }
-                if sessions.count >= 2 {
-                    WeekCard(sessions: Array(sessions.prefix(7)), goal: settings.sleepGoal)
+                if nights.count >= 2 {
+                    WeekCard(sessions: Array(nights.prefix(7)), goal: settings.sleepGoal)
                 }
             }
             .padding(.horizontal, Theme.padding)
@@ -436,6 +440,42 @@ private struct LastNightCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("dashboard.lastNight")
+    }
+}
+
+/// The most recent nap, when it is newer than the last night.
+private struct LatestNapCard: View {
+    let record: SleepSessionRecord
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        Button {
+            model.reportRoute = ReportRoute(sessionID: record.id, demo: model.isDemo)
+        } label: {
+            HStack(spacing: 14) {
+                ScoreRing(score: record.score, size: 54, lineWidth: 6)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Latest nap")
+                        .font(.headline)
+                        .foregroundStyle(Theme.textPrimary)
+                    Text(verbatim: "\(Formatters.shortDate(record.start)) · \(Formatters.time(record.start)) · \(Formatters.duration(record.totalSleep))")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.textTertiary)
+                    .accessibilityHidden(true)
+            }
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous).fill(Theme.surface))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("dashboard.latestNap")
     }
 }
 

@@ -36,6 +36,8 @@ enum SleepFlowSchemaV1: VersionedSchema {
         var snoringDuration: Double
         var sleepGoal: Double
         var algorithmVersion: String
+        /// A power nap or sleep-cycle session ("wake after sleep"), kept out of night statistics.
+        var isNap: Bool = false
         @Attribute(.externalStorage) var payload: Data
         @Relationship(deleteRule: .nullify, inverse: \JournalEntryRecord.session)
         var journalEntry: JournalEntryRecord?
@@ -61,6 +63,7 @@ enum SleepFlowSchemaV1: VersionedSchema {
             snoringDuration = session.metrics.snoringDuration
             sleepGoal = session.header.sleepGoal
             algorithmVersion = session.header.algorithmVersion
+            isNap = session.header.napPlan != nil
             self.payload = payload
         }
     }

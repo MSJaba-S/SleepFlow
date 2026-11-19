@@ -16,7 +16,8 @@ struct DataManagementView: View {
     var body: some View {
         List {
             Section {
-                LabeledContent("Nights") { Text(verbatim: "\(sessions.count)") }
+                LabeledContent("Nights") { Text(verbatim: "\(sessions.filter { !$0.isNap }.count)") }
+                LabeledContent("Naps") { Text(verbatim: "\(sessions.filter { $0.isNap }.count)") }
                 LabeledContent("Journal entries") { Text(verbatim: "\(journal.count)") }
                 LabeledContent("Sound clips") {
                     Text(ByteCountFormatter.string(fromByteCount: FileLocations.clipsSize(), countStyle: .file))
@@ -59,8 +60,15 @@ struct DataManagementView: View {
                     ForEach(sessions) { record in
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(Formatters.dayAndDate(record.start))
-                                    .foregroundStyle(Theme.textPrimary)
+                                HStack(spacing: 6) {
+                                    Text(Formatters.dayAndDate(record.start))
+                                        .foregroundStyle(Theme.textPrimary)
+                                    if record.isNap {
+                                        Text("Nap")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(Theme.accent)
+                                    }
+                                }
                                 Text(verbatim: "\(Formatters.timeRange(record.start, record.end)) · \(Formatters.duration(record.totalSleep))")
                                     .font(.caption)
                                     .foregroundStyle(Theme.textTertiary)

@@ -16,7 +16,8 @@ struct StatisticsView: View {
 
     var body: some View {
         let interval = StatisticsCalculator.interval(for: period, containing: anchor, calendar: calendar)
-        let all = sessions.map(\.summary)
+        // Naps ("wake after sleep") are not nights: they stay out of the long-term statistics.
+        let all = sessions.filter { !$0.isNap }.map(\.summary)
         let nights = StatisticsCalculator.nights(all, in: interval, calendar: calendar)
         ScrollView {
             VStack(spacing: Theme.spacing) {

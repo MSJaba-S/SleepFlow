@@ -65,7 +65,7 @@ enum DataExporter {
     static func csv(_ records: [SleepSessionRecord]) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
-        var lines = ["start,end,method,score,total_sleep_min,time_in_bed_min,efficiency,latency_min,interruptions,deep_min,light_min,snoring_min,coverage,simulated"]
+        var lines = ["start,end,method,score,total_sleep_min,time_in_bed_min,efficiency,latency_min,interruptions,deep_min,light_min,snoring_min,coverage,simulated,nap"]
         for record in records.sorted(by: { $0.start < $1.start }) {
             let fields: [String] = [
                 formatter.string(from: record.start),
@@ -81,7 +81,8 @@ enum DataExporter {
                 String(format: "%.1f", record.lightSleep / 60),
                 String(format: "%.1f", record.snoringDuration / 60),
                 String(format: "%.2f", record.dataCoverage),
-                record.isSimulated ? "1" : "0"
+                record.isSimulated ? "1" : "0",
+                record.isNap ? "1" : "0"
             ]
             lines.append(fields.joined(separator: ","))
         }
