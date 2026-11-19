@@ -200,6 +200,18 @@ extension WakeReason {
         case .alreadyAwake: return "You were already awake"
         case .nearDeadline: return "Woken just before your alarm time"
         case .deadline: return "Woken at your alarm time"
+        case .beforeDeepSleep: return "Woken before deep sleep"
         }
+    }
+}
+
+extension NapPlan {
+    /// "Power nap · 20 min" or "2 sleep cycles · 3h 00m".
+    var title: Text {
+        let duration = Formatters.span(minutes: sleepDuration / 60)
+        if let cycles = cycleCount {
+            return cycles == 1 ? Text("1 sleep cycle · \(duration)") : Text("\(cycles) sleep cycles · \(duration)")
+        }
+        return Text("Power nap · \(duration)")
     }
 }

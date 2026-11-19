@@ -26,6 +26,8 @@ final class AlarmCoordinator {
     }
 
     private(set) var nextOccurrence: AlarmOccurrence?
+    /// A one-off "wake after sleep" alarm for the nap or cycles being tracked right now.
+    private(set) var napOccurrence: AlarmOccurrence?
     private(set) var ringState: RingState = .idle
     private(set) var authorization: PermissionState = .notDetermined
     private(set) var lastReconciled: Date?
@@ -49,6 +51,7 @@ final class AlarmCoordinator {
 
     private static let recordsKey = "alarm.records"
     private static let suppressedKey = "alarm.suppressed"
+    private static let napKey = "alarm.nap"
 
     init(settings: AppSettings, diagnostics: DiagnosticsLog, scheduler: (any AlarmScheduling)? = nil) {
         self.settings = settings
@@ -106,7 +109,15 @@ final class AlarmCoordinator {
         processInbox()
         pruneSuppressed(now: now)
         let calendar = Calendar.current
-        let desired = AlarmOccurrencePlanner.upcoming(settings: settings.alarm, after: now, calendar: calendar, horizonDays: 7)
+        var desired = AlarmOccurrencePlanner.upcoming(settings: settings.alarm, after: now, calendar: calendar, horizonDays: 7)
+        if let nap = napOccurrence {
+            if nap.deadline > now.addingTimeInterval(-30 * 60) && !isSuppressed(nap.key) {
+                if nap.deadline > now { desired.append(nap) }
+            } else {
+                napOccurrence = nil
+            }
+            desired.sort { $0.deadline < $1.deadline }
+        }
         nextOccurrence = desired.first { !isSuppressed($0.key) }
 
         let deadlineRecords = records.filter { $0.role == .deadline && $0.backend == activeBackendName }
@@ -116,6 +127,14 @@ final class AlarmCoordinator {
 
         let plan = AlarmReconciler.reconcile(desired: desired, scheduled: deadlineRecords, suppressedKeys: Set(suppressed.keys), now: now)
         for record in plan.toCancel {
+            if record.fireDate <= now {
+                // Already due – it may be ringing right now. Only the user (or iOS) stops it; the
+                // record is forgotten after a while.
+                if record.fireDate < now.addingTimeInterval(-2 * 3600) {
+                    records.removeAll { $0.alarmID == record.alarmID }
+                }
+                continue
+            }
             cancelInSystem(record)
             records.removeAll { $0.alarmID == record.alarmID }
             cancelBackup(for: record.occurrenceKey)
@@ -147,7 +166,10 @@ final class AlarmCoordinator {
     /// With AlarmKit as primary, one notification burst a minute after the next deadline is a backup.
     private func ensureBackupForNext(now: Date) {
         guard usesPrimary, let next = nextOccurrence else { return }
-        let hasBackup = records.contains { $0.role == .deadline && $0.backend == "backup" && $0.occurrenceKey == next.key }
+        let backupDate = next.deadline.addingTimeInterval(60)
+        let hasBackup = records.contains {
+            $0.role == .deadline && $0.backend == "backup" && $0.occurrenceKey == next.key && abs($0.fireDate.timeIntervalSince(backupDate)) < 30
+        }
         if hasBackup { return }
         // Remove backups for other occurrences.
         for record in records where record.backend == "backup" { notifications.cancel(alarmID: record.alarmID) }
@@ -175,6 +197,37 @@ final class AlarmCoordinator {
         } else {
             notifications.cancel(alarmID: record.alarmID)
         }
+    }
+
+    // MARK: - Wake after sleep
+
+    /// Schedules the system alarm for a nap at its latest possible time. When sleep onset is
+    /// detected, `updateNap` moves it earlier.
+    func beginNap(_ occurrence: AlarmOccurrence) async {
+        if let previous = napOccurrence, previous.key != occurrence.key {
+            cancelAlarms(for: previous.key)
+        }
+        napOccurrence = occurrence
+        diagnostics.info("alarm", "Nap alarm set for \(Formatters.time(occurrence.deadline))")
+        saveState()
+        await reconcile()
+    }
+
+    /// Sleep onset is known: the nap's deadline (and window) move – only ever earlier.
+    func updateNap(_ occurrence: AlarmOccurrence) async {
+        guard let current = napOccurrence, current.key == occurrence.key else { return }
+        guard occurrence.deadline < current.deadline.addingTimeInterval(-1) else { return }
+        napOccurrence = occurrence
+        diagnostics.info("alarm", "Nap alarm moved to \(Formatters.time(occurrence.deadline))")
+        saveState()
+        await reconcile()
+    }
+
+    private func cancelAlarms(for key: String) {
+        for record in records where record.occurrenceKey == key {
+            cancelInSystem(record)
+        }
+        records.removeAll { $0.occurrenceKey == key }
     }
 
     // MARK: - Smart Alarm
@@ -270,6 +323,7 @@ final class AlarmCoordinator {
         }
         records.removeAll { $0.occurrenceKey == key }
         suppressed[key] = Date()
+        if napOccurrence?.key == key { napOccurrence = nil }
         ringState = .idle
         player.stop()
         saveState()
@@ -281,7 +335,13 @@ final class AlarmCoordinator {
     /// Stop tracking before the alarm: if it is within the wake-up window or later, this morning's
     /// alarm is no longer needed.
     func sessionEndedByUser(occurrence: AlarmOccurrence?, at date: Date) {
-        guard let occurrence, date >= occurrence.windowStart.addingTimeInterval(-15 * 60) else { return }
+        guard let occurrence else { return }
+        // A nap belongs to this session only: stopping it early removes its alarm.
+        if occurrence.key == napOccurrence?.key {
+            confirmWake(occurrenceKey: occurrence.key)
+            return
+        }
+        guard date >= occurrence.windowStart.addingTimeInterval(-15 * 60) else { return }
         confirmWake(occurrenceKey: occurrence.key)
     }
 
@@ -385,18 +445,27 @@ final class AlarmCoordinator {
         if let data = defaults.data(forKey: AlarmCoordinator.suppressedKey), let decoded = try? JSONDecoder().decode([String: Date].self, from: data) {
             suppressed = decoded
         }
+        if let data = defaults.data(forKey: AlarmCoordinator.napKey), let decoded = try? JSONDecoder().decode(AlarmOccurrence.self, from: data) {
+            napOccurrence = decoded
+        }
     }
 
     private func saveState() {
         let defaults = UserDefaults.standard
         if let data = try? JSONEncoder().encode(records) { defaults.set(data, forKey: AlarmCoordinator.recordsKey) }
         if let data = try? JSONEncoder().encode(suppressed) { defaults.set(data, forKey: AlarmCoordinator.suppressedKey) }
+        if let napOccurrence, let data = try? JSONEncoder().encode(napOccurrence) {
+            defaults.set(data, forKey: AlarmCoordinator.napKey)
+        } else {
+            defaults.removeObject(forKey: AlarmCoordinator.napKey)
+        }
     }
 
     /// Removes every scheduled alarm (used when the user deletes all data or disables the alarm).
     func cancelAll() {
         for record in records { cancelInSystem(record) }
         records.removeAll()
+        napOccurrence = nil
         player.stop()
         ringState = .idle
         saveState()

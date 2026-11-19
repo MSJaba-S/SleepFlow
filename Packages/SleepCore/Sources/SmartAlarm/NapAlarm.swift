@@ -178,10 +178,14 @@ public struct NapTracker: Sendable, Hashable {
     private var deepStreak = 0
     private var guardFired = false
 
-    public init(plan: NapPlan, key: String, start: Date, detector: SleepOnsetDetector = SleepOnsetDetector()) {
+    /// - Parameters:
+    ///   - countStart: restores a tracker whose counting had already started (resumed sessions).
+    public init(plan: NapPlan, key: String, start: Date, countStart: Date? = nil, sleepDetected: Bool = false, detector: SleepOnsetDetector = SleepOnsetDetector()) {
         self.plan = plan
         self.key = key
         self.start = start
+        self.countStart = countStart.map { min(max($0, start), plan.latestCountStart(start: start)) }
+        self.sleepDetected = countStart != nil && sleepDetected
         self.detector = detector
     }
 

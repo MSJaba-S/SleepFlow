@@ -134,6 +134,8 @@ extension WakeUpRecord {
             return Text("Woken at \(time), just before your alarm time.")
         case .deadline:
             return Text("Woken at \(time), your alarm time.")
+        case .beforeDeepSleep:
+            return Text("Woken at \(time) just as deep sleep began, so you would not wake up groggy.")
         }
     }
 }

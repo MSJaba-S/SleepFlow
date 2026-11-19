@@ -121,9 +121,16 @@ final class AppModel {
     // MARK: - Actions
 
     /// Starts a night. In demo mode (and in UI tests) the night simulator replaces the sensors.
-    func startTracking() async throws {
+    /// Starts a night (clock alarm) or a nap/cycles session (wake after sleep).
+    func startTracking(wake: WakeChoice = .clock) async throws {
         let simulated = settings.demoMode || AppEnvironment.useSimulatedSensors
-        try await tracking.start(method: settings.trackingMethod, simulated: simulated)
+        if let preset = wake.napPreset {
+            settings.lastNapPreset = preset.rawValue
+            settings.prefersWakeAfterSleep = true
+        } else {
+            settings.prefersWakeAfterSleep = false
+        }
+        try await tracking.start(method: settings.trackingMethod, simulated: simulated, wake: wake)
     }
 
     /// Ends the night. The report is presented by the root view once the night screen has closed.

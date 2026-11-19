@@ -30,6 +30,8 @@ final class AppSettings {
         static let dimScreen = "settings.dimNightScreen"
         static let habits = "settings.wakeHabit"
         static let weights = "settings.scoreWeights"
+        static let napPreset = "settings.napPreset"
+        static let wakeAfterSleep = "settings.wakeAfterSleep"
     }
 
     private let defaults: UserDefaults
@@ -51,6 +53,10 @@ final class AppSettings {
     var dimNightScreen: Bool { didSet { defaults.set(dimNightScreen, forKey: Key.dimScreen) } }
     /// How much each factor counts in the Sleep Score.
     var scoreWeights: ScoreWeights { didSet { saveWeights() } }
+    /// Last chosen "wake after sleep" option (raw value of `NapPreset`).
+    var lastNapPreset: String { didSet { defaults.set(lastNapPreset, forKey: Key.napPreset) } }
+    /// Whether "wake after sleep" was chosen last time instead of the clock alarm.
+    var prefersWakeAfterSleep: Bool { didSet { defaults.set(prefersWakeAfterSleep, forKey: Key.wakeAfterSleep) } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -75,6 +81,8 @@ final class AppSettings {
         } else {
             scoreWeights = .standard
         }
+        lastNapPreset = defaults.string(forKey: Key.napPreset) ?? "powerNap20"
+        prefersWakeAfterSleep = defaults.bool(forKey: Key.wakeAfterSleep)
     }
 
     var sleepGoal: TimeInterval { TimeInterval(sleepGoalMinutes * 60) }
@@ -87,7 +95,7 @@ final class AppSettings {
     }
 
     func resetAll() {
-        for key in [Key.onboarding, Key.goal, Key.method, Key.alarm, Key.clips, Key.model, Key.appearance, Key.language, Key.demo, Key.name, Key.dimScreen, Key.habits, Key.weights] {
+        for key in [Key.onboarding, Key.goal, Key.method, Key.alarm, Key.clips, Key.model, Key.appearance, Key.language, Key.demo, Key.name, Key.dimScreen, Key.habits, Key.weights, Key.napPreset, Key.wakeAfterSleep] {
             defaults.removeObject(forKey: key)
         }
         defaults.removeObject(forKey: "AppleLanguages")
@@ -102,6 +110,8 @@ final class AppSettings {
         userName = ""
         dimNightScreen = true
         scoreWeights = .standard
+        lastNapPreset = "powerNap20"
+        prefersWakeAfterSleep = false
     }
 
     private func saveWeights() {

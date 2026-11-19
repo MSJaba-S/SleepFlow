@@ -202,6 +202,18 @@ final class NapTrackerTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(epochStart(woke + 1).timeIntervalSince(countStart), plan.minimumSleepBeforeGuard)
     }
 
+    func testRestoredTrackerKeepsItsCountStart() {
+        let plan = NapPlan.cycles(2)
+        let onset = start.addingTimeInterval(11 * 60)
+        let tracker = NapTracker(plan: plan, key: "nap", start: start, countStart: onset, sleepDetected: true)
+        XCTAssertEqual(tracker.countStart, onset)
+        XCTAssertTrue(tracker.sleepDetected)
+        XCTAssertEqual(tracker.occurrence.deadline, onset.addingTimeInterval(3 * 3600))
+        // A stored count start after the latest possible one is capped.
+        let capped = NapTracker(plan: plan, key: "nap", start: start, countStart: start.addingTimeInterval(5 * 3600))
+        XCTAssertEqual(capped.occurrence.deadline, plan.latestDeadline(start: start))
+    }
+
     func testCycleNapsHaveNoDeepSleepGuard() {
         var tracker = NapTracker(plan: .cycles(1), key: "nap", start: start)
         for index in 0..<400 {
@@ -304,7 +316,10 @@ final class NapSimulationTests: XCTestCase {
                 if let deep = outcome.trueDeepStart, wake > deep {
                     intoDeep.append(wake.timeIntervalSince(deep) / 60)
                 }
-                lines.append("seed \(seed): \(outcome.reason?.rawValue ?? "-") at \(Int(wake.timeIntervalSince(start) / 60)) min, truth \(outcome.truthStage(at: wake, start: start)?.rawValue ?? "?")")
+                let reason: String = outcome.reason?.rawValue ?? "-"
+                let minute: Int = Int(wake.timeIntervalSince(start) / 60)
+                let truth: String = outcome.truthStage(at: wake, start: start).map { String(describing: $0) } ?? "?"
+                lines.append("seed \(seed): \(reason) at \(minute) min, truth \(truth)")
             }
             print("Power nap (\(method.rawValue)):\n" + lines.joined(separator: "\n"))
             // Woken at most a few minutes into deep sleep, never deep into it.
@@ -325,7 +340,11 @@ final class NapSimulationTests: XCTestCase {
                 XCTAssertLessThanOrEqual(wake, outcome.deadline.addingTimeInterval(SleepConstants.epochLength), "Never later than the deadline")
                 let stage = outcome.truthStage(at: wake, start: start)
                 if stage != .deep { good += 1 }
-                lines.append("seed \(seed): \(outcome.reason?.rawValue ?? "-") at \(Int(wake.timeIntervalSince(start) / 60)) min (deadline \(Int(outcome.deadline.timeIntervalSince(start) / 60))), truth \(stage?.rawValue ?? "?")")
+                let reason: String = outcome.reason?.rawValue ?? "-"
+                let minute: Int = Int(wake.timeIntervalSince(start) / 60)
+                let deadlineMinute: Int = Int(outcome.deadline.timeIntervalSince(start) / 60)
+                let truth: String = stage.map { String(describing: $0) } ?? "?"
+                lines.append("seed \(seed): \(reason) at \(minute) min (deadline \(deadlineMinute)), truth \(truth)")
             }
             print("One cycle (\(method.rawValue)):\n" + lines.joined(separator: "\n"))
             XCTAssertGreaterThanOrEqual(good, 10, "\(method): woke from deep sleep too often\n" + lines.joined(separator: "\n"))

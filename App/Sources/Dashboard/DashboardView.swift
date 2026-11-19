@@ -11,7 +11,8 @@ struct DashboardView: View {
     @Query(sort: \SleepSessionRecord.start, order: .reverse) private var sessions: [SleepSessionRecord]
 
     @State private var showPreSleep = false
-    @State private var startAfterSheet = false
+    @State private var preSleepChoice: WakeChoice = .clock
+    @State private var pendingStart: WakeChoice?
     @State private var startError: String?
 
     var body: some View {
@@ -26,6 +27,9 @@ struct DashboardView: View {
                         startError = nil
                         tracking.clearError()
                     }
+                }
+                NapCard { preset in
+                    openPreSleep(.afterSleep(preset))
                 }
                 startCard
                 AlarmSummaryCard()
@@ -45,12 +49,12 @@ struct DashboardView: View {
         .toolbar(.hidden, for: .navigationBar)
         .demoBanner(model.isDemo)
         .sheet(isPresented: $showPreSleep, onDismiss: {
-            guard startAfterSheet else { return }
-            startAfterSheet = false
-            Task { await startNight() }
+            guard let choice = pendingStart else { return }
+            pendingStart = nil
+            Task { await startSession(choice) }
         }) {
-            PreSleepView {
-                startAfterSheet = true
+            PreSleepView(initialChoice: preSleepChoice) { choice in
+                pendingStart = choice
                 showPreSleep = false
             }
             .environment(model)
@@ -110,9 +114,7 @@ struct DashboardView: View {
                     }
                 }
                 Button {
-                    startError = nil
-                    tracking.clearError()
-                    showPreSleep = true
+                    openPreSleep(.clock)
                 } label: {
                     Label("Start sleep tracking", systemImage: "play.fill")
                 }
@@ -122,9 +124,16 @@ struct DashboardView: View {
         }
     }
 
-    private func startNight() async {
+    private func openPreSleep(_ choice: WakeChoice) {
+        startError = nil
+        tracking.clearError()
+        preSleepChoice = choice
+        showPreSleep = true
+    }
+
+    private func startSession(_ choice: WakeChoice) async {
         do {
-            try await model.startTracking()
+            try await model.startTracking(wake: choice)
         } catch {
             startError = error.localizedDescription
         }
@@ -132,6 +141,73 @@ struct DashboardView: View {
 }
 
 // MARK: - Cards
+
+/// Wake after sleep: power naps and whole sleep cycles, counted from falling asleep.
+private struct NapCard: View {
+    let open: (NapPreset) -> Void
+
+    private let quick: [NapPreset] = [.powerNap20, .powerNap30, .cycles1]
+
+    var body: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 12) {
+                    Image(systemName: "bolt.horizontal.circle.fill")
+                        .font(.title)
+                        .foregroundStyle(Theme.accent)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Wake after sleep")
+                            .font(.headline)
+                            .foregroundStyle(Theme.textPrimary)
+                        Text("Counts from the moment you fall asleep and wakes you in light sleep – not in deep sleep.")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                HStack(spacing: 10) {
+                    ForEach(quick) { preset in
+                        Button {
+                            open(preset)
+                        } label: {
+                            VStack(spacing: 4) {
+                                Text(verbatim: preset.durationText)
+                                    .font(.display(.headline))
+                                    .foregroundStyle(Theme.textPrimary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
+                                Text(preset.isPowerNap ? LocalizedStringKey("Power nap") : LocalizedStringKey("1 cycle"))
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.textSecondary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 62)
+                            .background(RoundedRectangle(cornerRadius: Theme.smallCornerRadius, style: .continuous).fill(Theme.surfaceRaised))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityIdentifier("dashboard.nap.\(preset.rawValue)")
+                    }
+                }
+                Button {
+                    open(.cycles2)
+                } label: {
+                    HStack {
+                        Text("More sleep cycles")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.accent)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
 
 private struct ErrorCard: View {
     let message: String

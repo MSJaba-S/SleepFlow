@@ -47,6 +47,13 @@ final class TrackingController {
     private(set) var recovered: RecoveredSession?
     private(set) var errorMessage: String?
     private(set) var isPlaybackActive = false
+    /// Nap: when counting started (detected sleep onset, or the latest count start).
+    private(set) var napCountStart: Date?
+    /// Nap: counting started because sleep was detected (not because time ran out).
+    private(set) var napSleepDetected = false
+
+    /// The "wake after sleep" plan of the running session, if any.
+    var napPlan: NapPlan? { active?.header.napPlan }
 
     var phase: TrackingPhase { lifecycle.phase }
     var isTracking: Bool { lifecycle.isActive }
@@ -63,6 +70,7 @@ final class TrackingController {
     @ObservationIgnored private var combiner: EpochCombiner?
     @ObservationIgnored private var estimator: OnlineSleepEstimator?
     @ObservationIgnored private var engine = SmartAlarmEngine()
+    @ObservationIgnored private var napTracker: NapTracker?
     @ObservationIgnored private var epochs: [EpochFeatures] = []
     @ObservationIgnored private var sounds: [SoundEvent] = []
     @ObservationIgnored private var movements: [MovementEvent] = []
@@ -82,20 +90,38 @@ final class TrackingController {
 
     // MARK: - Start
 
-    func start(method: TrackingMethod, simulated: Bool) async throws {
+    func start(method: TrackingMethod, simulated: Bool, wake: WakeChoice = .clock) async throws {
         guard lifecycle.handle(.start) else { return }
         errorMessage = nil
         completedSessionID = nil
         let now = Date()
+        let napPlan = wake.napPreset?.plan
 
         var occurrence: AlarmOccurrence?
+        var napKey: String?
         if simulated {
-            let source = SimulatedNightSource(method: method, start: now, interval: AppEnvironment.isUITesting ? 0.004 : 0.02)
+            // A nap is simulated as a short session; a night as a full night. Both run in ~20 s.
+            let latency: TimeInterval = napPlan == nil ? 15 * 60 : 10 * 60
+            let length = napPlan.map { latency + $0.sleepDuration + 15 * 60 } ?? 7.5 * 3600
+            let epochCount = max(1, length / SleepConstants.epochLength)
+            let interval = AppEnvironment.isUITesting ? 0.004 : min(0.12, max(0.02, 18 / epochCount))
+            let source = SimulatedNightSource(method: method, start: now, duration: length, sleepLatency: latency, interval: interval)
             simulator = source
-            if settings.alarm.isEnabled {
+            if let napPlan {
+                napKey = "simulated-nap"
+                occurrence = napPlan.occurrence(key: "simulated-nap", start: now, onset: nil)
+            } else if settings.alarm.isEnabled {
                 let deadline = source.simulatedEnd.addingTimeInterval(-5 * 60)
                 occurrence = AlarmOccurrence(key: "simulated", deadline: deadline, windowStart: deadline.addingTimeInterval(-settings.alarm.effectiveWindow))
             }
+        } else if let napPlan {
+            // The system alarm is set for the latest possible wake-up now and moved earlier as
+            // soon as SleepFlow notices that you have fallen asleep.
+            let key = NapPlan.key(start: now, calendar: .current)
+            napKey = key
+            let nap = napPlan.occurrence(key: key, start: now, onset: nil)
+            occurrence = nap
+            await alarms.beginNap(nap)
         } else {
             await alarms.reconcile(now: now)
             if let next = alarms.nextOccurrence, next.deadline.timeIntervalSince(now) < 18 * 3600 {
@@ -107,11 +133,12 @@ final class TrackingController {
             start: now,
             method: method,
             alarm: occurrence,
-            smartAlarmEnabled: settings.alarm.isSmartEnabled && occurrence != nil,
+            smartAlarmEnabled: occurrence != nil && (napPlan != nil || settings.alarm.isSmartEnabled),
             sleepGoal: settings.sleepGoal,
             isSimulated: simulated,
             appVersion: AppEnvironment.appVersion,
-            timeZoneIdentifier: TimeZone.current.identifier
+            timeZoneIdentifier: TimeZone.current.identifier,
+            napPlan: napPlan
         )
         let journal = SessionJournal(directory: simulated ? FileLocations.simulatedSession : FileLocations.activeSession) { url in
             FileLocations.protectJournalFile(url)
@@ -121,6 +148,7 @@ final class TrackingController {
         } catch {
             lifecycle.handle(.failed)
             simulator = nil
+            if napPlan != nil && !simulated { alarms.sessionEndedByUser(occurrence: occurrence, at: now) }
             diagnostics.error("tracking", "Journal could not be created: \(error.localizedDescription)")
             throw error
         }
@@ -129,6 +157,7 @@ final class TrackingController {
         active = ActiveSession(header: header, occurrence: occurrence, isSimulated: simulated)
         combiner = EpochCombiner(sessionStart: now, method: method, secondaryExpected: false)
         estimator = OnlineSleepEstimator(method: method)
+        napTracker = napPlan.map { NapTracker(plan: $0, key: napKey ?? "nap", start: now) }
 
         do {
             try startSensors(method: method, header: header)
@@ -137,7 +166,9 @@ final class TrackingController {
             try? journal.discard()
             self.journal = nil
             active = nil
+            napTracker = nil
             lifecycle.handle(.failed)
+            if napPlan != nil && !simulated { alarms.sessionEndedByUser(occurrence: occurrence, at: now) }
             errorMessage = error.localizedDescription
             diagnostics.error("tracking", "Start failed: \(error.localizedDescription)")
             throw error
@@ -243,7 +274,44 @@ final class TrackingController {
             self.estimate = estimate
             let now = active?.isSimulated == true ? epoch.end : Date()
             if active?.isSimulated == true { simulatedNow = epoch.end }
+            if let estimate { followNap(epoch: epoch, estimate: estimate) }
             evaluateAlarm(now: now, estimate: estimate)
+        }
+    }
+
+    /// Wake after sleep: start counting at sleep onset (moving the alarm earlier) and stop a power
+    /// nap before deep sleep.
+    private func followNap(epoch: EpochFeatures, estimate: OnlineEstimate) {
+        guard var tracker = napTracker, let session = active, lifecycle.phase == .tracking else { return }
+        let update = tracker.update(epochStart: epoch.start, estimate: estimate)
+        napTracker = tracker
+        switch update {
+        case .none:
+            break
+        case .countingStarted(let at, let detected, let occurrence):
+            napCountStart = at
+            napSleepDetected = detected
+            active?.occurrence = occurrence
+            let marker = SessionMarker(time: at, kind: .napCountingStarted, detail: detected ? "sleep" : "latest")
+            markers.append(marker)
+            try? journal?.append(marker)
+            if !session.isSimulated {
+                diagnostics.info("tracking", detected
+                    ? "Fell asleep at \(Formatters.time(at)); alarm at \(Formatters.time(occurrence.deadline)) at the latest"
+                    : "No sleep detected in time; counting started at \(Formatters.time(at))")
+                Task { await alarms.updateNap(occurrence) }
+            }
+        case .wakeBeforeDeepSleep:
+            guard smartWakeReason == nil, let occurrence = session.occurrence else { return }
+            smartWakeReason = .beforeDeepSleep
+            addMarker(.smartAlarmTriggered, detail: WakeReason.beforeDeepSleep.rawValue)
+            if session.isSimulated {
+                lifecycle.handle(.alarmFired)
+                simulator?.stop()
+            } else {
+                diagnostics.info("tracking", "Deep sleep starting during a power nap; waking now")
+                Task { await alarms.triggerSmartWake(for: occurrence, reason: .beforeDeepSleep) }
+            }
         }
     }
 
@@ -352,8 +420,11 @@ final class TrackingController {
             return nil
         }
         let demo = active.isSimulated
+        // The wake-up as it finally was (a nap's deadline moves when sleep onset is detected).
+        var header = active.header
+        header.alarm = active.occurrence ?? active.header.alarm
         let input = SessionAssemblyInput(
-            header: active.header,
+            header: header,
             end: endTime,
             epochs: epochs,
             soundEvents: sounds,
@@ -385,7 +456,7 @@ final class TrackingController {
             lifecycle.handle(.failed)
         }
         if !demo && reason == .user {
-            alarms.sessionEndedByUser(occurrence: active.header.alarm, at: endTime)
+            alarms.sessionEndedByUser(occurrence: active.occurrence ?? active.header.alarm, at: endTime)
         }
         self.active = nil
         resetNight()
@@ -424,6 +495,9 @@ final class TrackingController {
         interruptionStart = nil
         lowBatteryMarked = false
         engine = SmartAlarmEngine()
+        napTracker = nil
+        napCountStart = nil
+        napSleepDetected = false
     }
 
     private func addMarker(_ kind: MarkerKind, detail: String? = nil) {
@@ -523,8 +597,13 @@ final class TrackingController {
         guard let recovered else { return }
         var markers = recovered.markers
         markers.append(SessionMarker(time: recovered.lastRecordedTime, kind: .recovered, detail: "saved after interruption"))
+        var header = recovered.header
+        if let plan = header.napPlan, let key = header.alarm?.key {
+            let counting = markers.first { $0.kind == .napCountingStarted }
+            header.alarm = plan.occurrence(key: key, start: header.start, onset: counting?.time)
+        }
         let input = SessionAssemblyInput(
-            header: recovered.header,
+            header: header,
             end: max(recovered.lastRecordedTime, recovered.header.start.addingTimeInterval(60)),
             epochs: recovered.epochs,
             soundEvents: recovered.soundEvents,
@@ -573,6 +652,15 @@ final class TrackingController {
         }
         self.combiner = combiner
         var occurrence = header.alarm
+        if let plan = header.napPlan {
+            let counting = markers.first { $0.kind == .napCountingStarted }
+            let key = header.alarm?.key ?? NapPlan.key(start: header.start, calendar: .current)
+            let tracker = NapTracker(plan: plan, key: key, start: header.start, countStart: counting?.time, sleepDetected: counting?.detail == "sleep")
+            napTracker = tracker
+            napCountStart = tracker.countStart
+            napSleepDetected = tracker.sleepDetected
+            occurrence = tracker.occurrence
+        }
         if let alarm = occurrence, alarm.deadline < Date() { occurrence = nil }
         active = ActiveSession(header: header, occurrence: occurrence, isSimulated: false)
         addMarker(.recovered, detail: "resumed")

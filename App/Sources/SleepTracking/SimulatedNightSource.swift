@@ -14,8 +14,17 @@ final class SimulatedNightSource: @unchecked Sendable {
     private let interval: TimeInterval
     private var task: Task<Void, Never>?
 
-    init(method: TrackingMethod, start: Date, duration: TimeInterval = 7.5 * 3600, seed: UInt64 = UInt64.random(in: 1...999_999), interval: TimeInterval = 0.02) {
-        let scenario = NightScenario(method: method, bedtime: start, timeInBed: duration, snoringPropensity: 0.25, restlessness: 0.35)
+    init(method: TrackingMethod, start: Date, duration: TimeInterval = 7.5 * 3600, sleepLatency: TimeInterval = 15 * 60, seed: UInt64 = UInt64.random(in: 1...999_999), interval: TimeInterval = 0.02) {
+        let short = duration < 4 * 3600
+        let scenario = NightScenario(
+            method: method,
+            bedtime: start,
+            timeInBed: duration,
+            sleepLatency: sleepLatency,
+            awakenings: short ? 0 : 2,
+            snoringPropensity: 0.25,
+            restlessness: 0.35
+        )
         night = NightSimulator.simulate(scenario, seed: seed)
         self.interval = interval
         (outputs, continuation) = AsyncStream.makeStream(of: SensorOutput.self, bufferingPolicy: .unbounded)

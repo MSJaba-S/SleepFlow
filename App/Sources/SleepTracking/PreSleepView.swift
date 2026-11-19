@@ -3,8 +3,8 @@ import SleepCore
 
 /// Last check before the night: method, placement, alarm and permissions.
 struct PreSleepView: View {
-    /// Called when everything is ready; the dashboard closes this sheet and starts the night.
-    let onStart: () -> Void
+    /// Called when everything is ready; the dashboard closes this sheet and starts the session.
+    let onStart: (WakeChoice) -> Void
 
     @Environment(AppModel.self) private var model
     @Environment(AppSettings.self) private var settings
@@ -15,6 +15,22 @@ struct PreSleepView: View {
 
     @State private var requesting = false
     @State private var problem: LocalizedStringKey?
+    @State private var wakeAfterSleep: Bool
+    @State private var preset: NapPreset
+
+    init(initialChoice: WakeChoice, onStart: @escaping (WakeChoice) -> Void) {
+        self.onStart = onStart
+        switch initialChoice {
+        case .clock:
+            _wakeAfterSleep = State(initialValue: false)
+            _preset = State(initialValue: .powerNap20)
+        case .afterSleep(let preset):
+            _wakeAfterSleep = State(initialValue: true)
+            _preset = State(initialValue: preset)
+        }
+    }
+
+    private var choice: WakeChoice { wakeAfterSleep ? .afterSleep(preset) : .clock }
 
     private var usesSimulator: Bool { model.isDemo || AppEnvironment.useSimulatedSensors }
 
@@ -39,15 +55,28 @@ struct PreSleepView: View {
                     }
 
                     SectionTitle(title: "Wake-up")
-                    Card {
-                        VStack(alignment: .leading, spacing: 10) {
-                            alarmSummary
-                            NavigationLink {
-                                AlarmSettingsView()
-                            } label: {
-                                Text("Change alarm")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(Theme.accent)
+                    Picker("Wake-up", selection: $wakeAfterSleep) {
+                        Text("At a set time").tag(false)
+                        Text("After sleep").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("presleep.wakeMode")
+                    if wakeAfterSleep {
+                        NapPresetGrid(selection: $preset)
+                        Card {
+                            napSummary
+                        }
+                    } else {
+                        Card {
+                            VStack(alignment: .leading, spacing: 10) {
+                                alarmSummary
+                                NavigationLink {
+                                    AlarmSettingsView()
+                                } label: {
+                                    Text("Change alarm")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(Theme.accent)
+                                }
                             }
                         }
                     }
@@ -83,6 +112,8 @@ struct PreSleepView: View {
                     if requesting {
                         ProgressView()
                             .tint(Theme.accentText)
+                    } else if wakeAfterSleep {
+                        Label("Start", systemImage: preset.symbol)
                     } else {
                         Label("Start the night", systemImage: "moon.fill")
                     }
@@ -137,6 +168,36 @@ struct PreSleepView: View {
         }
     }
 
+    private var napSummary: some View {
+        let plan = preset.plan
+        let latest = plan.latestDeadline(start: Date())
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: preset.symbol)
+                    .foregroundStyle(Theme.accent)
+                    .accessibilityHidden(true)
+                plan.title
+                    .font(.headline)
+                    .foregroundStyle(Theme.textPrimary)
+            }
+            Text(preset.detail)
+                .font(.subheadline)
+                .foregroundStyle(Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("SleepFlow starts counting when it notices that you are asleep, and wakes you in light sleep. If you have not fallen asleep after \(Formatters.span(minutes: plan.maximumLatency / 60)), counting starts anyway.")
+                .font(.footnote)
+                .foregroundStyle(Theme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+            if usesSimulator {
+                Text("In demo mode the nap is simulated in about 20 seconds.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.accentSoft)
+            } else {
+                DetailRow(title: "At the latest", value: Formatters.time(latest))
+            }
+        }
+    }
+
     @ViewBuilder
     private var alarmSummary: some View {
         if !settings.alarm.isEnabled {
@@ -184,11 +245,60 @@ struct PreSleepView: View {
                 }
             }
         }
-        if settings.alarm.isEnabled && !usesSimulator && alarms.authorization == .notDetermined {
+        if (wakeAfterSleep || settings.alarm.isEnabled) && !usesSimulator && alarms.authorization == .notDetermined {
             requesting = true
             await alarms.requestAuthorization()
             requesting = false
         }
-        onStart()
+        onStart(choice)
+    }
+}
+
+/// The "wake after sleep" options as large tiles.
+struct NapPresetGrid: View {
+    @Binding var selection: NapPreset
+
+    private let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
+
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 10) {
+            ForEach(NapPreset.allCases) { preset in
+                let selected = preset == selection
+                Button {
+                    selection = preset
+                } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Image(systemName: preset.symbol)
+                            .font(.headline)
+                            .foregroundStyle(selected ? Theme.accentText : Theme.accent)
+                            .accessibilityHidden(true)
+                        Text(verbatim: preset.durationText)
+                            .font(.display(.title3))
+                            .foregroundStyle(selected ? Theme.accentText : Theme.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        Text(preset.title)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(selected ? Theme.accentText.opacity(0.8) : Theme.textSecondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: Theme.smallCornerRadius, style: .continuous)
+                            .fill(selected ? Theme.accent : Theme.surface)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.smallCornerRadius, style: .continuous)
+                            .strokeBorder(Theme.stroke, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+                .accessibilityIdentifier("nap.\(preset.rawValue)")
+            }
+        }
     }
 }
