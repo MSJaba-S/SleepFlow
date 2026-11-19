@@ -241,8 +241,8 @@ extension AppSettings.Appearance {
     var title: LocalizedStringKey {
         switch self {
         case .system: return "Same as iPhone"
-        case .dark: return "Dark"
-        case .light: return "Light"
+        case .dark: return "Always dark"
+        case .light: return "Always light"
         }
     }
 }

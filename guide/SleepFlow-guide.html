@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SleepFlow – guide</title>
+<style>
+  :root {
+    --bg: #060A18;
+    --surface: #0E1530;
+    --surface-2: #151E3F;
+    --line: rgba(255,255,255,0.08);
+    --line-strong: rgba(255,255,255,0.16);
+    --text: #F3F5FF;
+    --text-2: #A9B2CF;
+    --text-3: #6D7695;
+    --accent: #FF8A3D;
+    --accent-ink: #1A0F05;
+    --awake: #FF9A62;
+    --light: #7FA2FF;
+    --deep: #5146D8;
+    --ok: #37D39B;
+    --warn: #FF6B6B;
+    --radius: 20px;
+    --radius-s: 12px;
+    --font: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Inter, Roboto, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--text); text-decoration-color: var(--accent); text-underline-offset: 3px; }
+  a:hover { color: var(--accent); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* Navigation */
+  header.top {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(6,10,24,0.92);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+  }
+  header.top .wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.01em; text-decoration: none; }
+  .brand svg { width: 28px; height: 28px; }
+  nav { display: flex; gap: 20px; overflow-x: auto; scrollbar-width: none; }
+  nav::-webkit-scrollbar { display: none; }
+  nav a { color: var(--text-2); text-decoration: none; font-size: 15px; white-space: nowrap; }
+  nav a:hover { color: var(--text); }
+
+  /* Hero */
+  .hero { padding: 88px 0 56px; }
+  .eyebrow { color: var(--accent); font-weight: 600; font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; }
+  h1 { font-size: clamp(44px, 7vw, 84px); line-height: 1.0; letter-spacing: -0.035em; margin: 14px 0 22px; font-weight: 700; }
+  h1 span { color: var(--accent); }
+  .lead { font-size: 21px; color: var(--text-2); max-width: 680px; margin: 0; }
+  .facts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px; }
+  .chip { border: 1px solid var(--line-strong); border-radius: 999px; padding: 7px 14px; font-size: 14px; color: var(--text-2); }
+  .chip b { color: var(--text); font-weight: 600; }
+
+  section { padding: 72px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(30px, 4vw, 44px); letter-spacing: -0.025em; line-height: 1.1; margin: 0 0 14px; }
+  h3 { font-size: 20px; letter-spacing: -0.01em; margin: 0 0 8px; }
+  .sub { color: var(--text-2); max-width: 720px; margin: 0 0 36px; font-size: 18px; }
+  .muted { color: var(--text-3); font-size: 14px; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 860px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* Planner */
+  .planner { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; }
+  @media (max-width: 960px) { .planner { grid-template-columns: 1fr; } }
+  .label { font-size: 13px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.07em; margin: 0 0 10px; }
+  .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 26px; }
+  .choice {
+    appearance: none; border: 1px solid var(--line-strong); background: transparent; color: var(--text);
+    border-radius: var(--radius-s); padding: 12px 14px; text-align: left; font: inherit; cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .choice small { display: block; color: var(--text-3); font-size: 13px; margin-top: 2px; }
+  .choice:hover { border-color: var(--text-3); }
+  .choice[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .choice[aria-pressed="true"] small { color: rgba(26,15,5,0.72); }
+  .choice:focus-visible, .step-btn:focus-visible, .check:focus-visible, summary:focus-visible { outline: 2px solid var(--light); outline-offset: 2px; }
+
+  .stepper { display: flex; align-items: center; gap: 10px; margin-bottom: 26px; }
+  .step-btn {
+    appearance: none; width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid var(--line-strong); background: transparent; color: var(--text);
+    font: 600 22px/1 var(--font); cursor: pointer; display: grid; place-items: center;
+  }
+  .step-btn:hover { border-color: var(--text-3); }
+  .time-out { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; min-width: 120px; text-align: center; font-variant-numeric: tabular-nums; }
+
+  .range-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .range-row b { font-size: 18px; font-variant-numeric: tabular-nums; }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; margin: 0; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--surface-2); }
+  input[type="range"]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--surface-2); }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: var(--text); margin-top: -9px; border: 0; }
+  input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: var(--text); border: 0; }
+  input[type="range"]:focus-visible { outline: 2px solid var(--light); outline-offset: 4px; border-radius: 6px; }
+  .range-scale { display: flex; justify-content: space-between; color: var(--text-3); font-size: 12px; margin-top: 4px; }
+
+  .result-head { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: baseline; margin-bottom: 26px; }
+  .big { font-size: clamp(44px, 6vw, 64px); font-weight: 700; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .big-label { color: var(--text-2); font-size: 15px; }
+
+  .bar { display: flex; gap: 3px; height: 44px; margin: 8px 0 10px; }
+  .seg { border-radius: 8px; min-width: 6px; position: relative; }
+  .seg.awake { background: var(--awake); }
+  .seg.count { background: var(--light); }
+  .seg.window { background: var(--accent); }
+  .seg.spare { background: transparent; border: 1px dashed var(--line-strong); }
+  .bar-legend { display: flex; flex-wrap: wrap; gap: 14px 22px; font-size: 14px; color: var(--text-2); margin-bottom: 24px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 7px; vertical-align: 0; }
+  .ticks { position: relative; height: 22px; font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .ticks span:first-child { transform: none; }
+  .ticks span:last-child { transform: translateX(-100%); }
+
+  .facts-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 560px) { .facts-list { grid-template-columns: 1fr; } }
+  .fact { background: var(--surface-2); border-radius: var(--radius-s); padding: 14px 16px; }
+  .fact .k { color: var(--text-3); font-size: 13px; }
+  .fact .v { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .note { margin-top: 18px; border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; color: var(--text-2); font-size: 15px; }
+
+  /* Cycle illustration */
+  .cycle svg { width: 100%; height: auto; display: block; }
+
+  /* Install checklist */
+  .progress { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; color: var(--text-2); font-size: 15px; }
+  .progress-track { flex: 1; height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; max-width: 320px; }
+  .progress-fill { height: 100%; width: 0; background: var(--ok); transition: width .25s; }
+  .steps { display: grid; gap: 10px; }
+  .check {
+    appearance: none; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer;
+    display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; align-items: start;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px;
+  }
+  .check:hover { border-color: var(--line-strong); }
+  .num { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); display: grid; place-items: center; font-weight: 700; color: var(--text-2); }
+  .check[aria-checked="true"] .num { background: var(--ok); border-color: var(--ok); color: #04150E; font-size: 0; }
+  .check[aria-checked="true"] .num::after { content: "✓"; font-size: 20px; }
+  .check[aria-checked="true"] h3 { color: var(--text-2); }
+  .check p { margin: 0; color: var(--text-2); }
+  .path { color: var(--text); font-weight: 600; }
+  .kbd { display: inline-block; border: 1px solid var(--line-strong); border-radius: 7px; padding: 0 7px; font-size: 15px; color: var(--text); }
+
+  .callout { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 12px; background: var(--surface-2); border-radius: var(--radius-s); padding: 16px 18px; margin-top: 16px; color: var(--text-2); font-size: 15px; }
+  .callout svg { width: 22px; height: 22px; margin-top: 2px; }
+  .callout b { color: var(--text); }
+
+  .ico { width: 40px; height: 40px; border-radius: 12px; background: var(--surface-2); display: grid; place-items: center; margin-bottom: 16px; }
+  .ico svg { width: 22px; height: 22px; }
+  ul.clean { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; }
+  ul.clean li { display: grid; grid-template-columns: 18px minmax(0,1fr); gap: 10px; color: var(--text-2); }
+  ul.clean li::before { content: ""; width: 6px; height: 6px; border-radius: 2px; background: var(--accent); margin: 10px 0 0 4px; }
+
+  /* Score weights */
+  .weights { display: flex; height: 18px; gap: 3px; margin: 18px 0 14px; }
+  .weights div { border-radius: 5px; }
+  .w-legend { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px 18px; font-size: 15px; color: var(--text-2); }
+  @media (max-width: 560px) { .w-legend { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  .w-legend b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+  details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0 22px; }
+  details + details { margin-top: 10px; }
+  summary { cursor: pointer; list-style: none; padding: 18px 0; font-weight: 600; display: flex; justify-content: space-between; gap: 16px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--text-3); font-size: 22px; line-height: 1; }
+  details[open] summary::after { content: "–"; }
+  details p { margin: 0 0 18px; color: var(--text-2); }
+
+  .limits li { padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .limits { list-style: none; padding: 0; margin: 0; }
+  .limits li:last-child { border-bottom: 0; }
+  .limits b { display: block; margin-bottom: 2px; }
+  .limits span { color: var(--text-2); }
+
+  footer { border-top: 1px solid var(--line); padding: 36px 0 56px; color: var(--text-3); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="SleepFlow">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="9" fill="#151E3F"/>
+        <path d="M19.5 7.5a9 9 0 1 0 5 15.6A10 10 0 0 1 19.5 7.5Z" fill="#FF8A3D"/>
+        <path d="M6 24c3 0 3-2 6-2s3 2 6 2 3-2 6-2" stroke="#7FA2FF" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+      SleepFlow
+    </a>
+    <nav aria-label="Indhold">
+      <a href="#vaagn">Vågn efter søvn</a>
+      <a href="#installer">Installér</a>
+      <a href="#nat">Første nat</a>
+      <a href="#alarm">Alarmen</a>
+      <a href="#score">Søvnscore</a>
+      <a href="#data">Dine data</a>
+      <a href="#aerligt">Begrænsninger</a>
+      <a href="#hjaelp">Hjælp</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div class="eyebrow">Guide til SleepFlow 1.0</div>
+    <h1>Sov. <span>Vågn let.</span></h1>
+    <p class="lead">SleepFlow lytter til din søvn med iPhonens mikrofon eller mærker den med bevægelsessensoren – og vækker dig, når du sover let. Også efter en powernap, talt fra det øjeblik du faktisk falder i søvn.</p>
+    <div class="facts">
+      <span class="chip"><b>Alt bliver på din iPhone</b> · ingen konto, ingen sky</span>
+      <span class="chip"><b>Dansk og engelsk</b></span>
+      <span class="chip"><b>Gratis</b> · installeres med dit eget Apple-id</span>
+    </div>
+  </div>
+
+  <!-- VÅGN EFTER SØVN -->
+  <section id="vaagn">
+    <div class="wrap">
+      <div class="eyebrow">Hovedfunktionen</div>
+      <h2>Vågn efter søvn</h2>
+      <p class="sub">Vælg en powernap eller et antal hele søvncyklusser. Tællingen starter først, når SleepFlow registrerer, at du sover – og du bliver vækket i let søvn, ikke midt i den dybe. Prøv selv:</p>
+
+      <div class="planner">
+        <div class="card">
+          <p class="label">Hvor længe vil du sove?</p>
+          <div class="choices" id="choices" role="group" aria-label="Vælg lur">
+            <button class="choice" data-k="p20" aria-pressed="true">Powernap<small>20 min</small></button>
+            <button class="choice" data-k="p30" aria-pressed="false">Powernap<small>30 min</small></button>
+            <button class="choice" data-k="c1" aria-pressed="false">1 søvncyklus<small>90 min</small></button>
+            <button class="choice" data-k="c2" aria-pressed="false">2 søvncyklusser<small>3 t</small></button>
+            <button class="choice" data-k="c3" aria-pressed="false">3 søvncyklusser<small>4 t 30 min</small></button>
+            <button class="choice" data-k="c5" aria-pressed="false">5 søvncyklusser<small>7 t 30 min</small></button>
+          </div>
+
+          <p class="label">Jeg trykker start kl.</p>
+          <div class="stepper">
+            <button class="step-btn" id="minus" aria-label="5 minutter tidligere">−</button>
+            <div class="time-out" id="bedtime" aria-live="polite">13.00</div>
+            <button class="step-btn" id="plus" aria-label="5 minutter senere">+</button>
+          </div>
+
+          <div class="range-row">
+            <p class="label" style="margin:0">Jeg falder i søvn efter</p>
+            <b id="latencyOut">8 min</b>
+          </div>
+          <input type="range" id="latency" min="0" max="40" step="1" value="8" aria-label="Minutter til du falder i søvn">
+          <div class="range-scale"><span>0</span><span>10</span><span>20</span><span>30</span><span>40 min</span></div>
+        </div>
+
+        <div class="card" aria-live="polite">
+          <div class="result-head">
+            <div>
+              <div class="big-label">Vækker dig i let søvn mellem</div>
+              <div class="big" id="windowOut">13.23–13.28</div>
+            </div>
+          </div>
+
+          <div class="bar" id="bar" aria-hidden="true"></div>
+          <div class="ticks" id="ticks" aria-hidden="true"></div>
+          <div class="bar-legend">
+            <span><i class="dot" style="background:var(--awake)"></i>Vågen – du falder i søvn</span>
+            <span><i class="dot" style="background:var(--light)"></i>Søvn der tælles</span>
+            <span><i class="dot" style="background:var(--accent)"></i>Vækkevindue</span>
+            <span><i class="dot" style="border:1px dashed var(--text-3)"></i>Reserve</span>
+          </div>
+
+          <div class="facts-list">
+            <div class="fact"><div class="k">Tællingen starter</div><div class="v" id="countOut">13.08</div></div>
+            <div class="fact"><div class="k">Senest vækning</div><div class="v" id="deadlineOut">13.28</div></div>
+            <div class="fact"><div class="k">Søvn du får</div><div class="v" id="sleepOut">20 min</div></div>
+            <div class="fact"><div class="k">Sikkerhedsalarm fra start</div><div class="v" id="latestOut">13.50</div></div>
+          </div>
+          <p class="note" id="noteOut"></p>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:16px">
+        <div class="card cycle">
+          <h3>Hvorfor 20 eller 90 minutter?</h3>
+          <p class="muted" style="margin:0 0 14px">Typisk forløb – illustration, ikke din måling</p>
+          <svg viewBox="0 0 520 190" role="img" aria-label="En søvncyklus: let søvn de første 20 til 30 minutter, derefter dyb søvn, og let søvn igen mod slutningen af cyklussen efter cirka 90 minutter.">
+            <line x1="40" y1="40" x2="510" y2="40" stroke="rgba(255,255,255,0.06)"/>
+            <line x1="40" y1="90" x2="510" y2="90" stroke="rgba(255,255,255,0.06)"/>
+            <line x1="40" y1="140" x2="510" y2="140" stroke="rgba(255,255,255,0.06)"/>
+            <text x="0" y="44" fill="#6D7695" font-size="12" font-family="inherit">Vågen</text>
+            <text x="0" y="94" fill="#6D7695" font-size="12" font-family="inherit">Let</text>
+            <text x="0" y="144" fill="#6D7695" font-size="12" font-family="inherit">Dyb</text>
+            <rect x="40" y="20" width="110" height="140" rx="8" fill="rgba(127,162,255,0.10)"/>
+            <rect x="430" y="20" width="80" height="140" rx="8" fill="rgba(255,138,61,0.14)"/>
+            <path d="M40 40 H62 V90 H150 V140 H330 V90 H510" fill="none" stroke="#7FA2FF" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M150 140 H330" fill="none" stroke="#5146D8" stroke-width="6" stroke-linecap="round"/>
+            <text x="46" y="180" fill="#A9B2CF" font-size="12" font-family="inherit">Powernap slutter her</text>
+            <text x="430" y="180" fill="#FF8A3D" font-size="12" font-family="inherit">Cyklus slutter</text>
+            <text x="190" y="128" fill="#A9B2CF" font-size="12" font-family="inherit">Dyb søvn – groggy hvis vækket</text>
+          </svg>
+          <p class="muted" style="margin-top:12px">Den dybe søvn begynder typisk 20–30 minutter efter, du er faldet i søvn. En powernap slutter før; en hel cyklus på ca. 90 minutter slutter i let søvn.</p>
+        </div>
+        <div class="card">
+          <h3>Sådan finder den ud af, at du sover</h3>
+          <ul class="clean">
+            <li>Hvert 30. sekund samles lyd og bevægelse til en vurdering: vågen, let eller dyb søvn.</li>
+            <li>Når søvnen har været stabil i ca. 4 minutter, regnes den for startet. Starttidspunktet rykkes tilbage til det stille øjeblik, hvor du faldt hen.</li>
+            <li>Ved en powernap holder den øje med dyb søvn. Begynder den, efter du har sovet mindst 10 minutter, vækker den dig med det samme.</li>
+            <li>Har den ikke registreret søvn efter 30 minutter, begynder tællingen alligevel.</li>
+          </ul>
+          <div class="callout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FF8A3D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg>
+            <div><b>Ærligt:</b> en telefon kan ikke måle hjernebølger. Den ser søvn gennem stilhed, vejrtrækning og bevægelse – så tidspunkterne er gode vurderinger, ikke en måling som på et søvnlaboratorium.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTALLATION -->
+  <section id="installer">
+    <div class="wrap">
+      <div class="eyebrow">Fra din PC til din iPhone</div>
+      <h2>Installér SleepFlow</h2>
+      <p class="sub">Samme vej som Transkriptor. Tryk på et trin, når det er gjort – det huskes i din browser.</p>
+
+      <div class="progress"><span id="progressText">0 af 6</span><div class="progress-track"><div class="progress-fill" id="progressFill"></div></div></div>
+
+      <div class="steps" id="steps">
+        <button class="check" role="checkbox" aria-checked="false" data-step="1">
+          <span class="num">1</span>
+          <span><h3>Hent appen</h3><p>Gå til <a href="https://github.com/MSJaba-S/SleepFlow/releases/tag/latest" target="_blank" rel="noopener">SleepFlow – seneste build</a> og hent <span class="path">SleepFlow.ipa</span>.</p></span>
+        </button>
+        <button class="check" role="checkbox" aria-checked="false" data-step="2">
+          <span class="num">2</span>
+          <span><h3>Udviklertilstand på iPhonen</h3><p>Kun hvis den ikke allerede er slået til: <span class="path">Indstillinger › Anonymitet og sikkerhed › Udviklertilstand</span> › til. Telefonen genstarter.</p></span>
+        </button>
+        <button class="check" role="checkbox" aria-checked="false" data-step="3">
+          <span class="num">3</span>
+          <span><h3>Installér med iPhone-Installer</h3><p>iPhonen i USB, åbn <span class="path">iPhone-Installer</span> på PC'en. Slå <span class="kbd">Forny automatisk</span> til, træk SleepFlow.ipa ind og tryk <span class="kbd">Installér</span>. Lad kablet sidde, til der står Færdig. Mangler programmet, så <a href="https://github.com/MSJaba-S/Transkriptor/releases/tag/installer" target="_blank" rel="noopener">hent det her</a> (kræver iTunes fra apple.com).</p></span>
+        </button>
+        <button class="check" role="checkbox" aria-checked="false" data-step="4">
+          <span class="num">4</span>
+          <span><h3>Betro udvikleren</h3><p>Siger iPhonen "Upålidelig udvikler": <span class="path">Indstillinger › Generelt › VPN og enhedsadministration</span> › dit Apple-id › Betro.</p></span>
+        </button>
+        <button class="check" role="checkbox" aria-checked="false" data-step="5">
+          <span class="num">5</span>
+          <span><h3>Åbn SleepFlow</h3><p>Gå introduktionen igennem: søvnmål, målemetode og vækketid. Giv adgang til mikrofon og alarmer.</p></span>
+        </button>
+        <button class="check" role="checkbox" aria-checked="false" data-step="6">
+          <span class="num">6</span>
+          <span><h3>Prøv det på ét minut</h3><p>Slå <span class="path">Indstillinger › Vis demodata</span> til, tryk <span class="kbd">Powernap 20 min</span> på I dag-skærmen og derefter <span class="kbd">Start</span>. Luren simuleres på ca. 20 sekunder og ender med alarm og rapport. Slå demodata fra igen bagefter – dine egne nætter bliver ikke rørt.</p></span>
+        </button>
+      </div>
+
+      <div class="callout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#7FA2FF" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <div><b>Gratis Apple-id = 7 dage og højst 3 apps.</b> Med Forny automatisk og iPhone-Installer kørende på PC'en fornyes SleepFlow af sig selv. Har du allerede 3 sideloadede apps, skal én af dem slettes først. Dine nætter bliver liggende, når du installerer en ny version ovenpå.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FØRSTE NAT -->
+  <section id="nat">
+    <div class="wrap">
+      <div class="eyebrow">Før du sover</div>
+      <h2>Din første nat</h2>
+      <p class="sub">Vælg målemetode før hver nat eller lur. Begge giver søvnfaser, søvnscore og Smart Alarm.</p>
+      <div class="grid-2">
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#FF8A3D" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+          <h3>Mikrofon <span class="muted">· anbefalet</span></h3>
+          <ul class="clean">
+            <li>Telefonen på natbordet, under en meter fra dit hoved, med mikrofonen fri.</li>
+            <li>Sæt opladeren i.</li>
+            <li>Du må gerne låse telefonen – målingen fortsætter.</li>
+            <li>Registrerer også snorken, hoste og søvnsnak.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#7FA2FF" stroke-width="2" stroke-linecap="round"><path d="M3 17h18M5 17v-5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5M7 10V7"/></svg></div>
+          <h3>Bevægelse</h3>
+          <ul class="clean">
+            <li>Telefonen med skærmen nedad på madrassen ved hovedpuden – ikke under den.</li>
+            <li>Sæt opladeren i.</li>
+            <li>Lad SleepFlow være åben. iOS stopper bevægelsessensoren, når appen ikke er på skærmen.</li>
+            <li>Ingen mikrofon i brug.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="grid-3" style="margin-top:16px">
+        <div class="card"><h3>Start</h3><p class="muted" style="font-size:15px;color:var(--text-2)">Tryk <b>Start søvnmåling</b> – eller vælg en powernap eller søvncyklus på I dag-skærmen.</p></div>
+        <div class="card"><h3>Sov</h3><p class="muted" style="font-size:15px;color:var(--text-2)">Natskærmen dæmper sig selv. Afslapningslyde kan spille imens – SleepFlow tager højde for dem.</p></div>
+        <div class="card"><h3>Vågn</h3><p class="muted" style="font-size:15px;color:var(--text-2)">Stop alarmen, og morgenrapporten åbner med søvnscore, søvnfaser, lyde og forslag til næste nat.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ALARM -->
+  <section id="alarm">
+    <div class="wrap">
+      <div class="eyebrow">Pålidelighed</div>
+      <h2>En alarm, du kan stole på</h2>
+      <p class="sub">Smart Alarm må aldrig gøre dig for sent på den. Derfor er der altid en almindelig alarm bagved.</p>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Alarm ved seneste tidspunkt</h3>
+          <p class="muted" style="font-size:15px;color:var(--text-2)">Når du starter, sættes en alarm i iPhonen til det seneste tidspunkt. Den ringer, selv hvis SleepFlow lukkes eller går ned.</p>
+        </div>
+        <div class="card">
+          <h3>Kun tidligere – aldrig senere</h3>
+          <p class="muted" style="font-size:15px;color:var(--text-2)">Smart Alarm og Vågn efter søvn kan kun flytte vækningen frem. Sommertid, tidszoner og genstart af telefonen tjekkes automatisk.</p>
+        </div>
+        <div class="card">
+          <h3>Lydløs og fokus</h3>
+          <p class="muted" style="font-size:15px;color:var(--text-2)">Fra iOS 26 bruger SleepFlow iPhonens egne alarmer, som ringer i lydløs og fokustilstand. På ældre iOS er alarmen en notifikation med lyd – slå lydløs fra og lad lyden være skruet op.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCORE -->
+  <section id="score">
+    <div class="wrap">
+      <div class="eyebrow">Gennemsigtig</div>
+      <h2>Søvnscore 0–100</h2>
+      <p class="sub">Seks faktorer får hver 0–100 point. Scoren er det vægtede gennemsnit, og rapporten viser præcis, hvor mange point hver faktor gav. Vægtene kan du selv ændre under Indstillinger.</p>
+      <div class="card">
+        <div class="weights" aria-hidden="true">
+          <div style="flex:30;background:var(--accent)"></div>
+          <div style="flex:20;background:var(--light)"></div>
+          <div style="flex:10;background:var(--awake)"></div>
+          <div style="flex:15;background:var(--deep)"></div>
+          <div style="flex:10;background:var(--ok)"></div>
+          <div style="flex:15;background:#A9B2CF"></div>
+        </div>
+        <div class="w-legend">
+          <span><i class="dot" style="background:var(--accent)"></i>Søvnlængde mod dit mål <b>30 %</b></span>
+          <span><i class="dot" style="background:var(--light)"></i>Søvneffektivitet <b>20 %</b></span>
+          <span><i class="dot" style="background:var(--awake)"></i>Tid til at falde i søvn <b>10 %</b></span>
+          <span><i class="dot" style="background:var(--deep)"></i>Afbrydelser <b>15 %</b></span>
+          <span><i class="dot" style="background:var(--ok)"></i>Uro <b>10 %</b></span>
+          <span><i class="dot" style="background:#A9B2CF"></i>Faste tider <b>15 %</b></span>
+        </div>
+        <p class="muted" style="margin:16px 0 0">Faste tider tæller først med efter tre nætter. Lure får deres egen score i forhold til den søvn, du bad om, og påvirker ikke din nattestatistik.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- DATA -->
+  <section id="data">
+    <div class="wrap">
+      <div class="eyebrow">Privatliv</div>
+      <h2>Dine data er dine</h2>
+      <div class="grid-3">
+        <div class="card"><h3>Intet forlader telefonen</h3><p class="muted" style="font-size:15px;color:var(--text-2)">Ingen konto, ingen server, ingen reklamer og ingen sporing. Udvikleren kan ikke se dine data.</p></div>
+        <div class="card"><h3>Lyd bliver til tal</h3><p class="muted" style="font-size:15px;color:var(--text-2)">Lyden analyseres i samme øjeblik og smides væk. Korte klip af snorken og tale gemmes kun, hvis du selv slår det til.</p></div>
+        <div class="card"><h3>Eksport og sletning</h3><p class="muted" style="font-size:15px;color:var(--text-2)">Eksportér alt til regneark, slet en enkelt nat eller alt på én gang under Indstillinger › Eksportér og slet data.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BEGRÆNSNINGER -->
+  <section id="aerligt">
+    <div class="wrap">
+      <div class="eyebrow">Ærligt</div>
+      <h2>Det skal du vide</h2>
+      <div class="card">
+        <ul class="limits">
+          <li><b>Ikke medicinsk udstyr</b><span>Søvnfaserne er vurderinger ud fra lyd og bevægelse. Let søvn omfatter drømmesøvn (REM), som telefonen ikke kan skelne fra. SleepFlow kan ikke stille diagnoser.</span></li>
+          <li><b>Første version</b><span>Appen er bygget og testet automatisk på en simuleret iPhone. Din første rigtige nat er også den første test på en fysisk telefon – brug gerne demo-prøven i trin 6 først.</span></li>
+          <li><b>Bevægelsesmåling kræver åben app</b><span>Bruger du en anden app eller låser telefonen, holder bevægelsesmålingen pause. Mikrofonmåling har ikke den begrænsning.</span></li>
+          <li><b>Ældre iOS end 26</b><span>Alarmen er en notifikation med lyd og følger lydløs tilstand og fokus.</span></li>
+          <li><b>Signering hver 7. dag</b><span>Med et gratis Apple-id skal appen fornyes hver uge. iPhone-Installer kan gøre det automatisk.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- HJÆLP -->
+  <section id="hjaelp">
+    <div class="wrap">
+      <div class="eyebrow">Hvis noget driller</div>
+      <h2>Hjælp</h2>
+      <details>
+        <summary>SleepFlow vil ikke åbne efter en uge</summary>
+        <p>Signeringen er udløbet. Sæt iPhonen i USB, åbn iPhone-Installer og installér SleepFlow.ipa igen. Dine nætter bliver liggende.</p>
+      </details>
+      <details>
+        <summary>iPhone-Installer siger, at der er for mange apps</summary>
+        <p>Et gratis Apple-id må højst have 3 sideloadede apps ad gangen. Slet en af dem på telefonen, og prøv igen.</p>
+      </details>
+      <details>
+        <summary>Alarmen ringede for lavt eller slet ikke</summary>
+        <p>Tjek Indstillinger › Tilladelser i SleepFlow – alarmer skal være tilladt. På iOS før 26 skal lydløs være slået fra og lyden skruet op.</p>
+      </details>
+      <details>
+        <summary>Natten blev afbrudt</summary>
+        <p>Blev SleepFlow lukket i løbet af natten, er alt indtil da gemt. Næste gang du åbner appen, kan du gemme natten eller fortsætte målingen.</p>
+      </details>
+      <details>
+        <summary>Hvor får jeg en ny version?</summary>
+        <p>Samme sted som i trin 1. Installér den ovenpå den gamle – dine data bevares.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">SleepFlow 1.0 · Lavet til Samir · Alle lyde og al kode er originale · Ingen tredjepartskode, ingen sporing</div>
+</footer>
+
+<script>
+(function () {
+  var PRESETS = {
+    p20: { name: "Powernap", sleep: 20, window: 5, guard: true },
+    p30: { name: "Powernap", sleep: 30, window: 10, guard: true },
+    c1: { name: "1 søvncyklus", sleep: 90, window: 20, guard: false },
+    c2: { name: "2 søvncyklusser", sleep: 180, window: 30, guard: false },
+    c3: { name: "3 søvncyklusser", sleep: 270, window: 30, guard: false },
+    c5: { name: "5 søvncyklusser", sleep: 450, window: 30, guard: false }
+  };
+  var MAX_LATENCY = 30;
+  var state = { k: "p20", bedtime: 13 * 60, latency: 8 };
+
+  var now = new Date();
+  state.bedtime = Math.ceil((now.getHours() * 60 + now.getMinutes()) / 5) * 5 % 1440;
+
+  function clock(m) {
+    m = ((Math.round(m) % 1440) + 1440) % 1440;
+    var h = Math.floor(m / 60), mm = m % 60;
+    return (h < 10 ? "0" : "") + h + "." + (mm < 10 ? "0" : "") + mm;
+  }
+  function span(min) {
+    if (min < 60) return min + " min";
+    var h = Math.floor(min / 60), m = min % 60;
+    return m ? h + " t " + m + " min" : h + " t";
+  }
+  function $(id) { return document.getElementById(id); }
+
+  function render() {
+    var p = PRESETS[state.k];
+    var start = state.bedtime;
+    var detected = state.latency <= MAX_LATENCY;
+    var countStart = start + Math.min(state.latency, MAX_LATENCY);
+    var deadline = countStart + p.sleep;
+    var windowStart = Math.max(countStart, deadline - p.window);
+    var latest = start + MAX_LATENCY + p.sleep;
+
+    $("bedtime").textContent = clock(start);
+    $("latencyOut").textContent = state.latency > MAX_LATENCY ? "over 30 min" : state.latency + " min";
+    $("windowOut").textContent = clock(windowStart) + "–" + clock(deadline);
+    $("countOut").textContent = clock(countStart);
+    $("deadlineOut").textContent = clock(deadline);
+    $("sleepOut").textContent = span(p.sleep);
+    $("latestOut").textContent = clock(latest);
+
+    var note;
+    if (!detected) {
+      note = "Har SleepFlow ikke registreret søvn efter 30 minutter, begynder tællingen alligevel – så du aldrig bliver liggende for længe.";
+    } else if (p.guard) {
+      note = "Begynder den dybe søvn, efter du har sovet mindst 10 minutter, vækker SleepFlow dig med det samme – så du ikke vågner groggy. Sikkerhedsalarmen flyttes til " + clock(deadline) + ", så snart søvnen er registreret.";
+    } else {
+      note = "SleepFlow venter på et øjeblik med let søvn i vinduet. Ved " + clock(deadline) + " ringer alarmen altid. Sikkerhedsalarmen flyttes dertil, så snart søvnen er registreret.";
+    }
+    $("noteOut").textContent = note;
+
+    var total = latest - start;
+    var parts = [
+      { cls: "awake", len: countStart - start },
+      { cls: "count", len: windowStart - countStart },
+      { cls: "window", len: deadline - windowStart },
+      { cls: "spare", len: latest - deadline }
+    ];
+    var bar = $("bar");
+    bar.innerHTML = "";
+    parts.forEach(function (part) {
+      if (part.len <= 0) return;
+      var d = document.createElement("div");
+      d.className = "seg " + part.cls;
+      d.style.flex = String(part.len);
+      bar.appendChild(d);
+    });
+    var ticks = $("ticks");
+    ticks.innerHTML = "";
+    [[start, clock(start)], [countStart, ""], [deadline, clock(deadline)], [latest, clock(latest)]].forEach(function (t, i, all) {
+      if (!t[1]) return;
+      var s = document.createElement("span");
+      s.textContent = t[1];
+      var pos = total > 0 ? (t[0] - start) / total * 100 : 0;
+      if (i === all.length - 1) { s.style.left = "100%"; }
+      else if (i === 0) { s.style.left = "0"; }
+      else {
+        if (pos > 88) return;
+        s.style.left = pos + "%";
+      }
+      ticks.appendChild(s);
+    });
+
+    document.querySelectorAll(".choice").forEach(function (b) {
+      b.setAttribute("aria-pressed", b.dataset.k === state.k ? "true" : "false");
+    });
+  }
+
+  document.querySelectorAll(".choice").forEach(function (b) {
+    b.addEventListener("click", function () { state.k = b.dataset.k; render(); });
+  });
+  $("minus").addEventListener("click", function () { state.bedtime = (state.bedtime - 5 + 1440) % 1440; render(); });
+  $("plus").addEventListener("click", function () { state.bedtime = (state.bedtime + 5) % 1440; render(); });
+  $("latency").addEventListener("input", function (e) { state.latency = parseInt(e.target.value, 10); render(); });
+  render();
+
+  // Install checklist, remembered in this browser when possible.
+  var KEY = "sleepflow-guide-steps";
+  var done = {};
+  try { done = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { done = {}; }
+  var checks = document.querySelectorAll(".check");
+  function paint() {
+    var n = 0;
+    checks.forEach(function (c) {
+      var on = !!done[c.dataset.step];
+      c.setAttribute("aria-checked", on ? "true" : "false");
+      if (on) n++;
+    });
+    $("progressText").textContent = n + " af " + checks.length;
+    $("progressFill").style.width = (n / checks.length * 100) + "%";
+  }
+  checks.forEach(function (c) {
+    c.addEventListener("click", function (e) {
+      if (e.target.closest("a")) return;
+      done[c.dataset.step] = !done[c.dataset.step];
+      try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (err) {}
+      paint();
+    });
+  });
+  paint();
+})();
+</script>
+</body>
+</html>

@@ -43,6 +43,8 @@
 "Allow alarms and notifications" = "Tillad alarmer og notifikationer";
 "Allow microphone" = "Tillad mikrofon";
 "Allowed" = "Tilladt";
+"Always dark" = "Altid mørkt";
+"Always light" = "Altid lyst";
 "Ambient" = "Ambient";
 "An alarm you can rely on" = "En alarm, du kan stole på";
 "Analysed on your iPhone" = "Analyseret på din iPhone";
@@ -98,7 +100,6 @@
 "Create export" = "Lav eksport";
 "Create new demo nights" = "Lav nye demonætter";
 "Dansk" = "Dansk";
-"Dark" = "Mørk";
 "Daylight soon after waking helps your body clock keep a steady rhythm." = "Dagslys kort efter, du er vågnet, hjælper dit indre ur med at holde en stabil rytme.";
 "Deep" = "Dyb";
 "Deep sleep" = "Dyb søvn";
