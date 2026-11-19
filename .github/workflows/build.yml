@@ -58,6 +58,7 @@ jobs:
 
   app:
     name: iPhone-app – byg, tests og .ipa
+    needs: core
     runs-on: macos-15
     timeout-minutes: 90
     env:

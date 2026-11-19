@@ -90,9 +90,11 @@ final class SleepFlowUITests: XCTestCase {
         let write = app.buttons["journal.new"]
         XCTAssertTrue(write.waitForExistence(timeout: 10))
         write.tap()
+        // The habits are further down the form; lists only create the rows that are on screen.
         let factor = app.buttons["factor.caffeine"]
-        XCTAssertTrue(factor.waitForExistence(timeout: 10))
+        XCTAssertTrue(scrollTo(factor, in: app), "Habit buttons should appear in the journal form")
         factor.tap()
+        XCTAssertTrue(factor.isSelected, "Tapping a habit should select it")
         app.buttons["journal.save"].tap()
         XCTAssertTrue(app.buttons["journal.entry"].firstMatch.waitForExistence(timeout: 10))
 
@@ -105,6 +107,17 @@ final class SleepFlowUITests: XCTestCase {
         stopSound.tap()
 
         app.tabBars.buttons["Settings"].tap()
-        XCTAssertTrue(app.switches["settings.demo"].waitForExistence(timeout: 10))
+        XCTAssertTrue(scrollTo(app.switches["settings.demo"], in: app), "The demo switch should be in Settings")
+    }
+
+    /// Swipes up until the element exists and can be tapped.
+    @MainActor
+    private func scrollTo(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 8) -> Bool {
+        if element.waitForExistence(timeout: 3) && element.isHittable { return true }
+        for _ in 0..<maxSwipes {
+            app.swipeUp()
+            if element.exists && element.isHittable { return true }
+        }
+        return element.exists && element.isHittable
     }
 }

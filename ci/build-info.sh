@@ -16,7 +16,7 @@ OUT="${1:-Build-Information.txt}"
   echo "Signing:            ${SIGNING_STATUS:-unsigned}"
   echo "Unit tests:         ${UNIT_TESTS:-not run}"
   echo "UI tests:           ${UI_TESTS:-not run}"
-  echo "SleepCore tests:    see the 'core' job of the same run"
+  echo "SleepCore tests:    passed (the app is only built after the 'core' job succeeds)"
   echo
   echo "Install on iPhone from Windows: open iPhone-Installer.exe, pick SleepFlow.ipa,"
   echo "sign in with your Apple ID and install. With a free Apple ID the app must be"
