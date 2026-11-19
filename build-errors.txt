@@ -1,0 +1,164 @@
+2 errors
+
+SleepFlow/App/Sources/SmartAlarm/AlarmSounds.swift:7:8: type 'AlarmSound' does not conform to protocol 'Hashable'
+    struct AlarmSound: Identifiable, Hashable, Sendable {
+           ^
+    /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmSounds.swift:10:9: note: stored property type 'LocalizedStringResource' does not conform to protocol 'Hashable', preventing synthesized conformance of 'AlarmSound' to 'Hashable'
+
+SleepFlow/App/Sources/Relaxation/RelaxationController.swift:102:8: type 'BreathingPattern' does not conform to protocol 'Hashable'
+    struct BreathingPattern: Identifiable, Hashable, Sendable {
+           ^
+    /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Relaxation/RelaxationController.swift:108:9: note: stored property type 'LocalizedStringResource' does not conform to protocol 'Hashable', preventing synthesized conformance of 'BreathingPattern' to 'Hashable'
+
+
+---- last 150 lines ----
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/CoreTransferable-2B8MZ3R7IKHHKT9K1IASP9DO8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/AlarmKit-B82RHH82H41IB2QXI8QRX7Y5T.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/Accessibility-7VBUC0Z0LM3DVS7XK5RODBJKU.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/CoreSpotlight-6Q7L1EOG2ZNFBNME13VRM5AZ0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/Symbols-BQ4NBJASWXQX4A1GUI2BX9DWC.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/OpenGLES-DBYCLLRFUSH124I2MATA59E1X.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/CoreLocation-3W18WZ23UCGPCLKT7S38DLKJW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/CoreData-D0JZ0N8IXYZX8I3Y9XITFGKRZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/FileProvider-DZ4VCFT1QEUD1UOPA85GL9QZP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/AppIntents-1BOQY6J1SQ7B7YJAEER4ZGIJ4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/CoreVideo-BTM1JJLMC82OZSU5FSALGGLV2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/CoreMotion-DM88CXWV8H9DS2LEVRVRDJ4Y0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/UserNotifications-28HGJ2CQ4ARK653QC9NCVTD5K.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/Accelerate-A06MXYUYO6HHZ6TYBQ0D13L70.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/CoreML-7XB1IBBK1U5LE1UR05S6F1EXF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/QuartzCore-5H8AK4BQCK1H4CI165596D13.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/CoreImage-A4L0QN15J1C93GIKPJUNU9Z1L.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/SwiftUICore-AG1FAZWIWV7JH3ZO2EZYKR2FU.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/UIKit-1UCTDAVNFP1DRUBGL5G4KIQQO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/CoreMedia-8OQXIW04C4ZWUOQUDO9KDGGO8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/CoreMIDI-A37SW48ZULH8W99QNROKYNJTD.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/RelevanceKit-C16I3WQ6X4A8D6BF5TLYXOKPK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/AudioToolbox-7TX1JHYRVUFZ40KT4KQ33YSKQ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/AVFAudio-2C5TUS392SD3T5TN7B1BDQZIN.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/MediaToolbox-9MXNQET8VBUZJM844Q4G7GOT9.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/SoundAnalysis-D9IYETWPE0ZRGETR5DPWDBCXU.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/AVFoundation-BV8RURCUDDHH877GAXU2L21Q9.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/SwiftUI-943SRI0ZWIHZVF4PIPHEOSN7I.pcm
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ SleepFlow (in target 'SleepFlow' from project 'SleepFlow')
+Failed frontend command:
+/Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-frontend -frontend -emit-module -experimental-skip-non-inlinable-function-bodies-without-types /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Settings/AboutView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmCoordinator.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmIntents.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmKitScheduler.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmScheduling.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Settings/AlarmSettingsView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmSounds.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AppCore/AppEnvironment.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AppCore/AppModel.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Settings/AppSettings.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AudioAnalysis/AppleSoundClassifier.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AudioAnalysis/AudioCaptureService.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AudioAnalysis/AudioSessionCoordinator.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Report/ClipPlayer.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/DesignSystem/Components.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Dashboard/DashboardView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Persistence/DataExporter.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Privacy/DataManagementView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AppCore/DemoDataGenerator.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AppCore/Diagnostics.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/DesignSystem/Formatting.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepJournal/JournalView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepJournal/LifestyleFactor.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/MotionAnalysis/MotionCaptureService.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepTracking/NightModeView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Onboarding/OnboardingView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Privacy/PermissionCenter.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepTracking/PreSleepView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Privacy/PrivacyView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Relaxation/RelaxationController.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Relaxation/RelaxationView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Report/ReportTexts.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Report/ReportView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Root/RootView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Persistence/Schema.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/DesignSystem/ScoreRing.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Settings/SettingsView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepTracking/SimulatedNightSource.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AppCore/SleepFlowApp.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Persistence/SleepStore.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Relaxation/SoundscapeEngine.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Statistics/StatisticsView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/DesignSystem/Theme.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepTracking/TrackingController.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepTracking/WakeChoice.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/WakeUp/WakeUpView.swift /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/DerivedSources/GeneratedAssetSymbols.swift -target arm64-apple-ios17.0-simulator -module-can-import-version AlarmKit 2303.2.4 1.0.0 -module-can-import-version DeveloperToolsSupport 23.0.4 23.0.4 -disable-cross-import-overlay-search -swift-module-cross-import AppIntents /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/AppIntents.framework/Modules/AppIntents.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import AppIntents /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/AppIntents.framework/Modules/AppIntents.swiftcrossimport/UIKit.swiftoverlay -swift-module-cross-import AppIntents /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks/AppIntents.framework/Modules/AppIntents.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import AppIntents /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks/AppIntents.framework/Modules/AppIntents.swiftcrossimport/UIKit.swiftoverlay -swift-module-cross-import RelevanceKit /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/RelevanceKit.framework/Modules/RelevanceKit.swiftcrossimport/MapKit.swiftoverlay -swift-module-cross-import RelevanceKit /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks/RelevanceKit.framework/Modules/RelevanceKit.swiftcrossimport/MapKit.swiftoverlay -swift-module-cross-import SwiftData /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks/SwiftData.framework/Modules/SwiftData.swiftcrossimport/CoreData.swiftoverlay -swift-module-cross-import SwiftData /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks/SwiftData.framework/Modules/SwiftData.swiftcrossimport/SwiftUI.swiftoverlay -load-resolved-plugin /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libAppIntentsMacros.dylib\#/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#AppIntentsMacros -load-resolved-plugin /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libFoundationMacros.dylib\#/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#FoundationMacros -load-resolved-plugin /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libObservationMacros.dylib\#/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#ObservationMacros -load-resolved-plugin /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libPreviewsMacros.dylib\#/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#PreviewsMacros -load-resolved-plugin /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftDataMacros.dylib\#/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftDataMacros -load-resolved-plugin /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftMacros.dylib\#/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftMacros -load-resolved-plugin /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftUIMacros.dylib\#/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftUIMacros -disable-implicit-swift-modules -Xcc -fno-implicit-modules -Xcc -fno-implicit-module-maps -explicit-swift-module-map-file /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/Objects-normal/arm64/SleepFlow-dependencies-1.json -Xllvm -aarch64-use-tbi -enable-objc-interop -sdk /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -I /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator -F /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator -no-color-diagnostics -Xcc -fno-color-diagnostics -enable-testing -g -debug-info-format\=dwarf -dwarf-version\=4 -module-cache-path /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -swift-version 6 -enforce-exclusivity\=checked -Onone -D DEBUG -serialize-debugging-options -const-gather-protocols-file /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/Objects-normal/arm64/SleepFlow_const_extract_protocols.json -enable-experimental-feature DebugDescriptionMacro -empty-abi-descriptor -validate-clang-modules-once -clang-build-session-file /Users/runner/work/SleepFlow/SleepFlow/build/dd/ModuleCache.noindex/Session.modulevalidation -Xcc -working-directory -Xcc /Users/runner/work/SleepFlow/SleepFlow -enable-anonymous-context-mangled-names -file-compilation-dir /Users/runner/work/SleepFlow/SleepFlow -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -Xcc -ivfsstatcache -Xcc /Users/runner/work/SleepFlow/SleepFlow/build/dd/SDKStatCaches.noindex/iphonesimulator26.2-23C57-dc75598d0054f22ec865fa860f139d72e244bd9a5feaf902f95f61bf06266e52.sdkstatcache -Xcc -I/Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/swift-overrides.hmap -Xcc -iquote -Xcc /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/SleepFlow-generated-files.hmap -Xcc -I/Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/SleepFlow-own-target-headers.hmap -Xcc -I/Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/SleepFlow-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow-5458c3ff406766c02dc9865d0545064b-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/SleepFlow-project-headers.hmap -Xcc -I/Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/DerivedSources -Xcc -DDEBUG\=1 -no-auto-bridging-header-chaining -module-name SleepFlow -frontend-parseable-output -disable-clang-spi -target-sdk-version 26.2 -target-sdk-name iphonesimulator26.2 -clang-target arm64-apple-ios26.2-simulator -in-process-plugin-server-path /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/libSwiftInProcPluginServer.dylib -emit-module-doc-path /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/Objects-normal/arm64/SleepFlow.swiftdoc -emit-module-source-info-path /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/Objects-normal/arm64/SleepFlow.swiftsourceinfo -emit-objc-header-path /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/Objects-normal/arm64/SleepFlow-Swift.h -serialize-diagnostics-path /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/Objects-normal/arm64/SleepFlow-primary-emit-module.dia -emit-dependencies-path /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/Objects-normal/arm64/SleepFlow-primary-emit-module.d -o /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/Objects-normal/arm64/SleepFlow.swiftmodule -emit-abi-descriptor-path /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/Objects-normal/arm64/SleepFlow.abi.json
+
+EmitSwiftModule normal arm64 (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+/Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmSounds.swift:7:8: error: type 'AlarmSound' does not conform to protocol 'Hashable'
+struct AlarmSound: Identifiable, Hashable, Sendable {
+       ^
+/Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmSounds.swift:10:9: note: stored property type 'LocalizedStringResource' does not conform to protocol 'Hashable', preventing synthesized conformance of 'AlarmSound' to 'Hashable'
+    let title: LocalizedStringResource
+        ^
+/Users/runner/work/SleepFlow/SleepFlow/App/Sources/Relaxation/RelaxationController.swift:102:8: error: type 'BreathingPattern' does not conform to protocol 'Hashable'
+struct BreathingPattern: Identifiable, Hashable, Sendable {
+       ^
+/Users/runner/work/SleepFlow/SleepFlow/App/Sources/Relaxation/RelaxationController.swift:108:9: note: stored property type 'LocalizedStringResource' does not conform to protocol 'Hashable', preventing synthesized conformance of 'BreathingPattern' to 'Hashable'
+    let title: LocalizedStringResource
+        ^
+/Users/runner/work/SleepFlow/SleepFlow/App/Sources/Relaxation/RelaxationController.swift:109:9: note: stored property type 'LocalizedStringResource' does not conform to protocol 'Hashable', preventing synthesized conformance of 'BreathingPattern' to 'Hashable'
+    let detail: LocalizedStringResource
+        ^
+
+SwiftCompile normal arm64 Compiling\ ReportView.swift,\ RootView.swift,\ Schema.swift,\ ScoreRing.swift,\ SettingsView.swift,\ SimulatedNightSource.swift,\ SleepFlowApp.swift,\ SleepStore.swift,\ SoundscapeEngine.swift,\ StatisticsView.swift,\ Theme.swift,\ TrackingController.swift,\ WakeChoice.swift,\ WakeUpView.swift,\ GeneratedAssetSymbols.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Report/ReportView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Root/RootView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Persistence/Schema.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/DesignSystem/ScoreRing.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Settings/SettingsView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepTracking/SimulatedNightSource.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AppCore/SleepFlowApp.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Persistence/SleepStore.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Relaxation/SoundscapeEngine.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Statistics/StatisticsView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/DesignSystem/Theme.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepTracking/TrackingController.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepTracking/WakeChoice.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/WakeUp/WakeUpView.swift /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'SleepFlow' from project 'SleepFlow')
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Report/ReportView.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Root/RootView.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Persistence/Schema.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/DesignSystem/ScoreRing.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Settings/SettingsView.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepTracking/SimulatedNightSource.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AppCore/SleepFlowApp.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Persistence/SleepStore.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Relaxation/SoundscapeEngine.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Statistics/StatisticsView.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/DesignSystem/Theme.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepTracking/TrackingController.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SleepTracking/WakeChoice.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/App/Sources/WakeUp/WakeUpView.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 /Users/runner/work/SleepFlow/SleepFlow/build/dd/Build/Intermediates.noindex/SleepFlow.build/Debug-iphonesimulator/SleepFlow.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'SleepFlow' from project 'SleepFlow')
+    cd /Users/runner/work/SleepFlow/SleepFlow
+    
+
+SwiftCompile normal arm64 Compiling\ AboutView.swift,\ AlarmCoordinator.swift,\ AlarmIntents.swift,\ AlarmKitScheduler.swift,\ AlarmScheduling.swift,\ AlarmSettingsView.swift,\ AlarmSounds.swift,\ AppEnvironment.swift,\ AppModel.swift,\ AppSettings.swift,\ AppleSoundClassifier.swift,\ AudioCaptureService.swift,\ AudioSessionCoordinator.swift,\ ClipPlayer.swift,\ Components.swift,\ DashboardView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Settings/AboutView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmCoordinator.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmIntents.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmKitScheduler.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmScheduling.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Settings/AlarmSettingsView.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/SmartAlarm/AlarmSounds.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AppCore/AppEnvironment.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AppCore/AppModel.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Settings/AppSettings.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AudioAnalysis/AppleSoundClassifier.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AudioAnalysis/AudioCaptureService.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/AudioAnalysis/AudioSessionCoordinator.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Report/ClipPlayer.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/DesignSystem/Components.swift /Users/runner/work/SleepFlow/SleepFlow/App/Sources/Dashboard/DashboardView.swift (in target 'SleepFlow' from project 'SleepFlow')
+
+** TEST BUILD FAILED **
+
+
+The following build commands failed:
+	SwiftEmitModule normal arm64 Emitting\ module\ for\ SleepFlow (in target 'SleepFlow' from project 'SleepFlow')
+	EmitSwiftModule normal arm64 (in target 'SleepFlow' from project 'SleepFlow')
+	Building project SleepFlow for testing with scheme SleepFlow
+(3 failures)
